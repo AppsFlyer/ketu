@@ -14,6 +14,40 @@ A Clojure Apache Kafka client with core.async api
 * **Shapes**: Transform the original objects of the java client to clojure data and back.
 * **Simple Configuration**: Friendly, validated configuration.
 
+## Minimal Examples
+
+Produce a name string into kafka and read the same string from kafka, all through channels:
+
+```clojure
+(defn produce-and-consume-example []
+  (let [source-chan (async/chan 10)
+        source-opts {:name "names-consumer"
+                     :brokers "broker1:9092"
+                     :topic "names"
+                     :group-id "names-consumer-group"
+                     :value-type :string
+                     :shape :value}
+        source (source/source source-chan source-opts)
+
+        sink-opts {:name "names-producer"
+                   :brokers "broker1:9091"
+                   :topic "names"
+                   :value-type :string
+                   :shape :value}
+        sink-chan (async/chan 10)
+        sink (sink/sink sink-chan sink-opts)]
+
+    ;; Produce a name to kafka
+    (async/>!! sink-chan "bob")
+    ;; Consume a name from kafka
+    (async/<!! source-chan)
+
+    ;; Close the source. It will close the source-chan automatically.
+    (source/stop! source)
+    ;; Close the sink-chan. It will automatically close the sink.
+    (async/close! sink-chan)))
+```
+
 ## Configuration reference
 
 Anything that is not documented is not supported and might change.
