@@ -1,0 +1,23 @@
+<configuration debug="true">
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>
+                %d{yyyy-MM-dd HH:mm:ss} %-5level- [%logger{36}] %msg  %marker%n
+            </pattern>
+        </encoder>
+    </appender>
+
+    <logger name="ketu" level="DEBUG" />
+
+    <!-- Logs that might be too much or too little and can be configured individually:
+    <logger name="org.apache.kafka.clients" level="ERROR" />
+    <logger name="org.apache.kafka.clients" level="DEBUG" />
+    <logger name="kafka.server" level="ERROR" />
+    <logger name="kafka.server" level="DEBUG" />
+    <logger name="org.apache.zookeeper" level="ERROR" />
+    -->
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE" />
+    </root>
+</configuration>
