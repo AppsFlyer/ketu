@@ -1,5 +1,8 @@
 (defproject com.appsflyer/ketu "0.6.0"
   :description "Clojure Apache Kafka client with core.async api"
+  :url "https://github.com/AppsFlyer/ketu"
+  :license {:name "Apache License, Version 2.0"
+            :url "http://www.apache.org/licenses/LICENSE-2.0.html"}
 
   :dependencies [[org.clojure/clojure "1.10.1"]
                  [org.clojure/core.async "1.3.610"]
