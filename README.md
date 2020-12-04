@@ -14,38 +14,42 @@ A Clojure Apache Kafka client with core.async api
 * **Shapes**: Transform the original objects of the java client to clojure data and back.
 * **Simple Configuration**: Friendly, validated configuration.
 
-## Minimal Examples
+## Minimal Example
 
-Produce a name string into kafka and read the same string from kafka, all through channels:
+Consume a name string from kafka and produce a greeting string for that name back into kafka, all through channels:
 
 ```clojure
-(defn produce-and-consume-example []
-  (let [source-chan (async/chan 10)
-        source-opts {:name "names-consumer"
-                     :brokers "broker1:9092"
-                     :topic "names"
-                     :group-id "names-consumer-group"
-                     :value-type :string
-                     :shape :value}
-        source (source/source source-chan source-opts)
-
-        sink-opts {:name "names-producer"
-                   :brokers "broker1:9091"
+(ns example
+  (:require [clojure.core.async :refer [chan close! <!! >!!]]
+            [ketu.async.source :as source]
+            [ketu.async.sink :as sink]))
+  
+(let [<names (chan 10)
+      source-opts {:name "greeter-consumer"
+                   :brokers "broker1:9092"
                    :topic "names"
+                   :group-id "greeter"
                    :value-type :string
                    :shape :value}
-        sink-chan (async/chan 10)
-        sink (sink/sink sink-chan sink-opts)]
+      source (source/source <names source-opts)
 
-    ;; Produce a name to kafka
-    (async/>!! sink-chan "bob")
-    ;; Consume a name from kafka
-    (async/<!! source-chan)
+      >greets (chan 10)
+      sink-opts {:name "greeter-producer"
+                 :brokers "broker2:9091"
+                 :topic "greetings"
+                 :value-type :string
+                 :shape :value}
+      sink (sink/sink >greets sink-opts)]
 
-    ;; Close the source. It will close the source-chan automatically.
-    (source/stop! source)
-    ;; Close the sink-chan. It will automatically close the sink.
-    (async/close! sink-chan)))
+  ;; Consume a name and produce a greeting. You could also do this with e.g. clojure.core.async/pipeline.
+  (->> (<!! <names)
+       (str "Hi, ")
+       (>!! >greets))
+
+  ;; Close the source. It automatically closes the source channel `<names`.
+  (source/stop! source)
+  ;; Close the sink channel `>greets`. It causes the sink to close itself as a consequence.
+  (close! >greets))
 ```
 
 ## Configuration reference
