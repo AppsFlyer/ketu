@@ -1,4 +1,6 @@
 # Ketu
+[![Clojars Project](https://img.shields.io/clojars/v/com.appsflyer/ketu.svg)](https://clojars.org/com.appsflyer/ketu)
+[![cljdoc badge](https://cljdoc.org/badge/com.appsflyer/ketu)](https://cljdoc.org/d/com.appsflyer/ketu/CURRENT)
 
 A Clojure Apache Kafka client with core.async api
 
