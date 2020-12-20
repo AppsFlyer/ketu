@@ -129,6 +129,7 @@
   [producer in-chan opts]
   (let [sink-name (:ketu/name opts)
         sender-threads-num (:ketu.sink/sender-threads-num opts)
+        remaining-sender-threads (atom sender-threads-num)
         close-producer? (:ketu.sink/close-producer? opts)
         ->record (->record-fn opts)
 
@@ -140,44 +141,35 @@
                :ketu.sink/producer producer
                :ketu.sink/abort-input abort-input}
 
+        threads-done-chan        (async/chan)
+        auto-close-chan          (async/chan)
+
         ;; Channels that are closed when their thread loop is done.
         _ (log/info logger "[sink={}] Start {} worker(s)" sink-name sender-threads-num)
-        sender-threads
-        (for [i (range sender-threads-num)]
-          (let [thread-name (str "ketu-sink-" sink-name "-" i)]
-            (async/thread
-              (try
-                (log/info logger "[sink={} worker={}] Start" sink-name i)
-                (.setName (Thread/currentThread) thread-name)
-                (send-loop state)
-                (catch Exception e
-                  (log/error logger "[sink={} worker={}] Unrecoverable error" sink-name i e))
-                (finally
-                  (log/info logger "[sink={} worker={}] Exit" sink-name i))))))
-
-        ;; A single channel that is closed when all sender-threads are done.
-        sender-threads-done (util/go-drain-all! sender-threads)
-
-        ;; If enabled (default true) close producer when done sending messages from input channel.
-        auto-close-thread
-        (when close-producer?
-          (async/thread
-            (try
-              (log/info logger "[sink={} auto-close] Start" sink-name)
-              (.setName (Thread/currentThread) (str "ketu-sink-" sink-name "-auto-close"))
-
-              (async/<!! sender-threads-done)
-              (log/info logger "[sink={} auto-close] All workers are done" sink-name)
-              (close-producer! state)
-
-              (catch Exception e
-                (log/error logger "[sink={} auto-close] Error" sink-name e)))))
-
-        state (-> state
-                  (assoc :ketu.sink/sender-threads sender-threads
-                         :ketu.sink/sender-threads-done sender-threads-done)
-                  (cond-> auto-close-thread (assoc :ketu.sink/auto-close-thread auto-close-thread)))]
-    state))
+        sender-threads           (mapv #(let [thread-name (str "ketu-sink-" sink-name "-" %)]
+                                          (async/thread
+                                            (try
+                                              (log/info logger "[sink={} worker={}] Start" sink-name %)
+                                              (.setName (Thread/currentThread) thread-name)
+                                              (send-loop state)
+                                              (catch Throwable e
+                                                (log/error logger "[sink={} worker={}] Unrecoverable error" sink-name % e)))
+                                            (log/info logger "[sink={} worker={}] Exit" sink-name %)
+                                            (when (zero? (swap! remaining-sender-threads dec))
+                                              (async/close! threads-done-chan)
+                                              (when close-producer?
+                                                (log/info logger "[sink={} auto-close] All workers are done" sink-name)
+                                                (try
+                                                  (close-producer! state)
+                                                  (catch Throwable e
+                                                    (log/error logger "[sink={} auto-close] Error" sink-name e))
+                                                  (finally
+                                                    (async/close! auto-close-chan)))))))
+                                       (range sender-threads-num))]
+    (-> state
+        (assoc :ketu.sink/sender-threads sender-threads
+               :ketu.sink/sender-threads-done threads-done-chan)
+        (cond-> close-producer? (assoc :ketu.sink/auto-close-thread auto-close-chan)))))
 
 (defn sink
   "Sends ProducerRecord's from in-chan to kafka.
@@ -205,6 +197,6 @@
   It shouldn't be necessary to call this function since by default the sink closes
   itself automatically when the input channel is closed."
   [state]
-  (wait-until-done-or-timeout! state)
   (abort-input! state)
+  (wait-until-done-or-timeout! state)
   (close-producer! state))
