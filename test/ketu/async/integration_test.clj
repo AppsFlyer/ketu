@@ -120,6 +120,8 @@
       (u/try-put! producer-chan ["1" resolve1])
       ;; Close the sink to make sure messages were sent
       (async/close! producer-chan)
+      ;; Allow the worker thread to consume all messages before aborting input
+      (Thread/sleep 500)
       (sink/stop! sink)
       ;; The promises were resolved
       (spy.assert/called-once-with? resolve0 "0" 0)

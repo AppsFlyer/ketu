@@ -71,6 +71,8 @@
           sink (sink/sink ch opts)]
       (async/>!! ch "v")
       (async/close! ch)
+      ;; Allow the worker thread to consume all messages before aborting input
+      (Thread/sleep 500)
       (sink/stop! sink)
       (is (= [(producer/record "bundt" "v")] (.history producer))))))
 
@@ -192,7 +194,6 @@
           (sink/stop! sink)
           (is (= #{[:info "[sink=test] Start 1 worker(s)"]
                    [:info "[sink=test worker=0] Start"]
-                   [:info "[sink=test auto-close] Start"]
                    [:info "[sink=test worker=0] Exit"]
                    [:info "[sink=test auto-close] All workers are done"]
                    [:info "[sink=test] Close producer"]}
