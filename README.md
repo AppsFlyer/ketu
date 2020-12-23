@@ -1,4 +1,6 @@
 # Ketu
+
+[![Build Status](https://img.shields.io/github/workflow/status/appsflyer/ketu/Build?event=push&branch=master&label=build)](https://github.com/appsflyer/ketu/actions)
 [![Clojars Project](https://img.shields.io/clojars/v/com.appsflyer/ketu.svg)](https://clojars.org/com.appsflyer/ketu)
 [![cljdoc badge](https://cljdoc.org/badge/com.appsflyer/ketu)](https://cljdoc.org/d/com.appsflyer/ketu/CURRENT)
 
