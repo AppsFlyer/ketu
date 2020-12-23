@@ -1,8 +1,16 @@
-(defproject com.appsflyer/ketu "0.6.0"
+(defproject com.appsflyer/ketu "0.6.1-SNAPSHOT"
   :description "Clojure Apache Kafka client with core.async api"
   :url "https://github.com/AppsFlyer/ketu"
   :license {:name "Apache License, Version 2.0"
             :url "http://www.apache.org/licenses/LICENSE-2.0.html"}
+
+  :deploy-repositories [["releases" {:url "https://repo.clojars.org"
+                                     :sign-releases false
+                                     :username :env/clojars_user
+                                     :password :env/clojars_pass}]
+                        ["snapshots" {:url "https://repo.clojars.org"
+                                      :username :env/clojars_user
+                                      :password :env/clojars_pass}]]
 
   :dependencies [[org.clojure/clojure "1.10.1"]
                  [org.clojure/core.async "1.3.610"]

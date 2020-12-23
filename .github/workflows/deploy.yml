@@ -1,0 +1,28 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Lint
+        uses: DeLaGuardo/clojure-lint-action@v1
+        with:
+          clj-kondo-args: --lint src test
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Test
+        run: lein test
+      - name: Deploy
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        env:
+          CLOJARS_USER: ${{ secrets.CLOJARS_USER }}
+          CLOJARS_PASS: ${{ secrets.CLOJARS_PASS }}
+        run: lein deploy
