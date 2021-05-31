@@ -82,6 +82,7 @@
 (s/def :ketu.sink/sender-threads-num pos-int?)
 (s/def :ketu.sink/sender-threads-timeout-ms nat-int?)
 (s/def :ketu.sink/close-producer? boolean?)
+(s/def :ketu.sink/producer-close-timeout-ms nat-int?)
 (s/def :ketu.sink/callback fn?)
 (s/def :ketu.sink/callback-obj #(instance? Callback %))
 (s/def :ketu.sink/create-callback fn?)
@@ -100,7 +101,12 @@
                 :ketu.sink/shape
                 :ketu.sink/sender-threads-num
                 :ketu.sink/sender-threads-timeout-ms
-                :ketu.sink/close-producer?]))
+                :ketu.sink/close-producer?
+                :ketu.sink/producer-close-timeout-ms
+                :ketu.sink/callback
+                :ketu.sink/callback-obj
+                :ketu.sink/create-callback
+                :ketu.sink/create-callback-obj]))
 
 ;; Coercing keys to canonical form
 
