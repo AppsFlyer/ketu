@@ -27,7 +27,8 @@
                              [metosin/sieppari "0.0.0-alpha13"]
                              [commons-io/commons-io "2.6"]
                              [ch.qos.logback/logback-classic "1.2.3"]
-                             [org.apache.kafka/kafka_2.12 "2.5.1"]]
+                             [org.apache.kafka/kafka_2.12 "2.5.1"]
+                             [org.clojure/test.check "1.1.0"]]
               :jvm-opts ["-Dlogback.configurationFile=dev-logback.xml"]}
 
              ;; Tests only, silent logs
