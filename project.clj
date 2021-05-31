@@ -27,7 +27,11 @@
                              [metosin/sieppari "0.0.0-alpha13"]
                              [commons-io/commons-io "2.6"]
                              [ch.qos.logback/logback-classic "1.2.3"]
-                             [org.apache.kafka/kafka_2.12 "2.5.1"]]
+
+                             ; Kafka (docker in docker)
+                             [org.testcontainers/kafka "1.15.3"]
+                             [clj-test-containers "0.4.0"]
+                             [net.java.dev.jna/jna "5.8.0"]]
               :jvm-opts ["-Dlogback.configurationFile=dev-logback.xml"]}
 
              ;; Tests only, silent logs
