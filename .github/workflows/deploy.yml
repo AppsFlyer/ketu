@@ -23,6 +23,12 @@ jobs:
         run: clj-kondo --lint src test
       - name: Unit tests
         run: lein cloverage --lcov --junit
+      - name: Publish unit test results
+        uses: EnricoMi/publish-unit-test-result-action@v1.17
+        if: always()
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          files: "target/coverage/junit.xml"
       - name: Deploy
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         env:
