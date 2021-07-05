@@ -18,13 +18,6 @@ jobs:
         with:
           distribution: adopt
           java-version: 8
-      - name: Restore local Maven repository from cache
-        uses: actions/cache@v2
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles( 'project.clj' ) }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
       - name: Lint
         uses: DeLaGuardo/clojure-lint-action@master
         with:
