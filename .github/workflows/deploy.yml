@@ -41,7 +41,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
       - name: Unit tests
-        run: lein cloverage --lcov --junit
+        run: lein -v && lein cloverage --lcov --junit
       - name: Publish Unit Test Results
         uses: EnricoMi/publish-unit-test-result-action@v1.17
         if: always()
