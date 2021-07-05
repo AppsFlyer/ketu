@@ -13,6 +13,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      - name: Set up JDK 8
+        uses: actions/setup-java@v2
+        with:
+          distribution: adopt
+          java-version: 8
       - name: Restore local Maven repository from cache
         uses: actions/cache@v2
         with:
@@ -33,6 +38,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      - name: Set up JDK 8
+        uses: actions/setup-java@v2
+        with:
+          distribution: adopt
+          java-version: 8
       - name: Restore local Maven repository from cache
         uses: actions/cache@v2
         with:
@@ -41,7 +51,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
       - name: Unit tests
-        run: lein -v && lein cloverage --lcov --junit
+        run: lein cloverage --lcov --junit
       - name: Publish Unit Test Results
         uses: EnricoMi/publish-unit-test-result-action@v1.17
         if: always()
