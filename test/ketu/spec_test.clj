@@ -8,7 +8,7 @@
             [clojure.test.check.properties :as prop]
             [clojure.test.check.generators :as gen])
   (:import (org.apache.kafka.clients.consumer ConsumerRecord)
-           (org.apache.kafka.clients.producer ProducerRecord Callback)
+           (org.apache.kafka.clients.producer ProducerRecord)
            (clojure.reflect Method)))
 
 (defn ->kebab [s]
@@ -30,14 +30,14 @@
          (map ->kebab))))
 
 (deftest sink-opts-tests
-  (testing "that passing only the required fields is valid"
+  (testing "Passing only the required fields is valid"
     (tc/quick-check
       10
       (prop/for-all [name (gen/such-that (complement clojure.string/blank?) gen/string)]
         (let [sink-opts {:ketu/name name}]
           (is (s/valid? :ketu/sink-opts sink-opts))))))
 
-  (testing "that passing all possible valid fields is valid"
+  (testing "Passing all possible valid fields is valid"
     (tc/quick-check
       50
       (prop/for-all [name                      (gen/such-that (complement clojure.string/blank?) gen/string)
@@ -50,53 +50,36 @@
                      sender-threads-num        (gen/large-integer* {:min 1})
                      sender-threads-timeout-ms (gen/large-integer* {:min 0})
                      close-producer?           gen/boolean
-                     producer-close-timeout-ms (gen/large-integer* {:min 1})
-                     callback                  (gen/elements [boolean? int? contains? neg?])
-                     callback-obj              (gen/return (reify Callback
-                                                             (onCompletion [_ _ _])))
-                     create-callback           (gen/elements [boolean? int? contains? neg?])
-                     create-callback-obj       (gen/elements [boolean? int? contains? neg?])]
+                     producer-close-timeout-ms (gen/large-integer* {:min 1})]
         (let [sink-opts {:ketu/name                           name
                          :ketu/topic                          topic
                          :ketu.sink/shape                     shape
                          :ketu.sink/sender-threads-num        sender-threads-num
                          :ketu.sink/sender-threads-timeout-ms sender-threads-timeout-ms
                          :ketu.sink/close-producer?           close-producer?
-                         :ketu.sink/producer-close-timeout-ms producer-close-timeout-ms
-                         :ketu.sink/callback                  callback
-                         :ketu.sink/callback-obj              callback-obj
-                         :ketu.sink/create-callback           create-callback
-                         :ketu.sink/create-callback-obj       create-callback-obj}]
+                         :ketu.sink/producer-close-timeout-ms producer-close-timeout-ms}]
           (is (s/valid? :ketu/sink-opts sink-opts))))))
 
-  (testing "that passing valid required fields and invalid optional fields is invalid"
+  (testing "Passing valid required fields and invalid optional fields is invalid"
     (tc/quick-check
       50
       (prop/for-all [name                      (gen/such-that (complement clojure.string/blank?) gen/string)
-                     topic                     gen/large-integer
+                     topic                     (gen/one-of [(gen/return "") gen/large-integer])
                      shape                     gen/string
-                     sender-threads-num        gen/string
-                     sender-threads-timeout-ms gen/string
-                     close-producer?           gen/string
-                     producer-close-timeout-ms gen/string
-                     callback                  gen/string
-                     callback-obj              gen/string
-                     create-callback           gen/string
-                     create-callback-obj       gen/string]
+                     sender-threads-num        (gen/one-of [gen/string (gen/large-integer* {:max -1})])
+                     sender-threads-timeout-ms (gen/one-of [gen/string (gen/large-integer* {:max -1})])
+                     close-producer?           (gen/such-that some? gen/any)
+                     producer-close-timeout-ms gen/string]
         (let [sink-opts {:ketu/name                           name
                          :ketu/topic                          topic
                          :ketu.sink/shape                     shape
                          :ketu.sink/sender-threads-num        sender-threads-num
                          :ketu.sink/sender-threads-timeout-ms sender-threads-timeout-ms
                          :ketu.sink/close-producer?           close-producer?
-                         :ketu.sink/producer-close-timeout-ms producer-close-timeout-ms
-                         :ketu.sink/callback                  callback
-                         :ketu.sink/callback-obj              callback-obj
-                         :ketu.sink/create-callback           create-callback
-                         :ketu.sink/create-callback-obj       create-callback-obj}]
+                         :ketu.sink/producer-close-timeout-ms producer-close-timeout-ms}]
           (is (not (s/valid? :ketu/sink-opts sink-opts)))))))
 
-  (testing "that passing undocumented fields is valid"
+  (testing "Making sure the spec is open, meaning it doesn't fail on undocumented fields"
     (tc/quick-check
       50
       (prop/for-all [name (gen/such-that (complement clojure.string/blank?) gen/string)
