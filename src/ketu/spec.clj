@@ -102,11 +102,7 @@
                 :ketu.sink/sender-threads-num
                 :ketu.sink/sender-threads-timeout-ms
                 :ketu.sink/close-producer?
-                :ketu.sink/producer-close-timeout-ms
-                :ketu.sink/callback
-                :ketu.sink/callback-obj
-                :ketu.sink/create-callback
-                :ketu.sink/create-callback-obj]))
+                :ketu.sink/producer-close-timeout-ms]))
 
 ;; Coercing keys to canonical form
 
