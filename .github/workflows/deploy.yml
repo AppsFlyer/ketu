@@ -13,11 +13,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Lint
-        uses: DeLaGuardo/clojure-lint-action@v1
+      - name: Setup linter
+        uses: DeLaGuardo/setup-clj-kondo@master
         with:
-          clj-kondo-args: --lint src test
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          version: '2021.06.18'
+      - name: Lint
+        run: clj-kondo --lint src test
       - name: Test
         run: lein test
       - name: Deploy
