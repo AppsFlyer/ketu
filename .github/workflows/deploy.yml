@@ -19,7 +19,7 @@ jobs:
         with:
           version: '2021.06.18'
       - name: Lint
-        run: clj-kondo --lint src test
+        run: clj-kondo --lint src test --config '{:lint-as {clojure.test.check.properties/for-all clojure.core/let}}'
       - name: Test
         run: lein test
       - name: Deploy
