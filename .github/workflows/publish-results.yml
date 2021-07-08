@@ -12,7 +12,7 @@ jobs:
     name: Publish
     runs-on: ubuntu-20.04
     steps:
-      - name: Download test results artifact
+      - name: Download unit test results artifact
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
         run: |
@@ -29,3 +29,8 @@ jobs:
             gh api $url > "$name.zip"
             unzip -d "$name" "$name.zip"
           done
+      - name: Publish unit test results
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        with:
+          commit: ${{ github.event.workflow_run.head_sha }}
+          files: "artifacts/**/*.xml"
