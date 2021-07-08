@@ -30,7 +30,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v2
         with:
-          name: Test results
+          name: test-results
           path: |
             target/coverage/junit.xml
             target/coverage/lcov.info
