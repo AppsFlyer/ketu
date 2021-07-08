@@ -4,16 +4,20 @@ on:
   push:
     branches:
       - master
-      - dev
   pull_request:
 
 jobs:
   build:
     name: Build
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      - name: Setup java
+        uses: actions/setup-java@v2
+        with:
+          distribution: adopt
+          java-version: 8
       - name: Setup linter
         uses: DeLaGuardo/setup-clj-kondo@master
         with:
@@ -21,7 +25,16 @@ jobs:
       - name: Lint
         run: clj-kondo --lint src test --config '{:lint-as {clojure.test.check.properties/for-all clojure.core/let}}'
       - name: Test
-        run: lein test
+        run: lein cloverage --lcov --junit
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: Test results
+          path: |
+            target/coverage/junit.xml
+            target/coverage/lcov.info
+          if-no-files-found: error
       - name: Deploy
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         env:
