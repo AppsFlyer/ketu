@@ -21,13 +21,17 @@ jobs:
           version: '2021.06.18'
       - name: Lint
         run: clj-kondo --lint src test
-      - name: Unit tests
+      - name: Test
         run: lein cloverage --lcov --junit
-      - name: Coveralls
-        uses: coverallsapp/github-action@master
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v2
         with:
-          path-to-lcov: "target/coverage/lcov.info"
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          name: Test results
+          path: |
+            target/coverage/junit.xml
+            target/coverage/lcov.info
+          if-no-files-found: error
       - name: Deploy
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         env:
