@@ -71,8 +71,6 @@
           sink (sink/sink ch opts)]
       (async/>!! ch "v")
       (async/close! ch)
-      ;; Allow the worker thread to consume all messages before aborting input
-      (Thread/sleep 500)
       (sink/stop! sink)
       (is (= [(producer/record "bundt" "v")] (.history producer))))))
 
@@ -241,7 +239,7 @@
                   :ketu.sink/producer-supplier (constantly producer)}
             ch (async/chan)
             sink (sink/sink ch opts)
-            throw! (fn ([& _] (throw (Exception. "test exception"))))]
+            throw! (fn [^Object _ ^long _] (throw (Exception. "test exception")))]
         (with-redefs [producer/close! throw!]
           (async/close! ch)
           (u/try-take! (sink/done-chan sink)))

@@ -67,8 +67,7 @@
         (recur)))))
 
 (defn done-chan [state]
-  (or (:ketu.sink/auto-close-thread state)
-      (:ketu.sink/sender-threads-done state)))
+  (:ketu.sink/sender-threads-done state))
 
 (defn- wait-until-done-or-timeout!
   [state]
@@ -141,35 +140,33 @@
                :ketu.sink/producer producer
                :ketu.sink/abort-input abort-input}
 
-        threads-done-chan        (async/chan)
-        auto-close-chan          (async/chan)
+        threads-done-chan (async/chan)
 
         ;; Channels that are closed when their thread loop is done.
         _ (log/info logger "[sink={}] Start {} worker(s)" sink-name sender-threads-num)
-        sender-threads           (mapv #(let [thread-name (str "ketu-sink-" sink-name "-" %)]
-                                          (async/thread
-                                            (try
-                                              (log/info logger "[sink={} worker={}] Start" sink-name %)
-                                              (.setName (Thread/currentThread) thread-name)
-                                              (send-loop state)
-                                              (catch Throwable e
-                                                (log/error logger "[sink={} worker={}] Unrecoverable error" sink-name % e)))
-                                            (log/info logger "[sink={} worker={}] Exit" sink-name %)
-                                            (when (zero? (swap! remaining-sender-threads dec))
-                                              (async/close! threads-done-chan)
-                                              (when close-producer?
-                                                (log/info logger "[sink={} auto-close] All workers are done" sink-name)
-                                                (try
-                                                  (close-producer! state)
-                                                  (catch Throwable e
-                                                    (log/error logger "[sink={} auto-close] Error" sink-name e))
-                                                  (finally
-                                                    (async/close! auto-close-chan)))))))
-                                       (range sender-threads-num))]
+        sender-threads
+        (mapv #(let [thread-name (str "ketu-sink-" sink-name "-" %)]
+                  (async/thread
+                    (try
+                      (log/info logger "[sink={} worker={}] Start" sink-name %)
+                      (.setName (Thread/currentThread) thread-name)
+                      (send-loop state)
+                      (catch Exception e
+                        (log/error logger "[sink={} worker={}] Unrecoverable error" sink-name % e))
+                      (finally
+                        (log/info logger "[sink={} worker={}] Exit" sink-name %)))
+                    (when (zero? (swap! remaining-sender-threads dec))
+                      (when close-producer?
+                        (log/info logger "[sink={} auto-close] All workers are done" sink-name)
+                        (try
+                          (close-producer! state)
+                          (catch Throwable e
+                            (log/error logger "[sink={} auto-close] Error" sink-name e))))
+                      (async/close! threads-done-chan))))
+               (range sender-threads-num))]
     (-> state
         (assoc :ketu.sink/sender-threads sender-threads
-               :ketu.sink/sender-threads-done threads-done-chan)
-        (cond-> close-producer? (assoc :ketu.sink/auto-close-thread auto-close-chan)))))
+               :ketu.sink/sender-threads-done threads-done-chan))))
 
 (defn sink
   "Sends ProducerRecord's from in-chan to kafka.
@@ -197,6 +194,6 @@
   It shouldn't be necessary to call this function since by default the sink closes
   itself automatically when the input channel is closed."
   [state]
-  (abort-input! state)
   (wait-until-done-or-timeout! state)
+  (abort-input! state)
   (close-producer! state))
