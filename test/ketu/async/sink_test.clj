@@ -192,7 +192,6 @@
           (sink/stop! sink)
           (is (= #{[:info "[sink=test] Start 1 worker(s)"]
                    [:info "[sink=test worker=0] Start"]
-                   [:info "[sink=test auto-close] Start"]
                    [:info "[sink=test worker=0] Exit"]
                    [:info "[sink=test auto-close] All workers are done"]
                    [:info "[sink=test] Close producer"]}
@@ -240,7 +239,7 @@
                   :ketu.sink/producer-supplier (constantly producer)}
             ch (async/chan)
             sink (sink/sink ch opts)
-            throw! (fn ([& _] (throw (Exception. "test exception"))))]
+            throw! (fn [^Object _ ^long _] (throw (Exception. "test exception")))]
         (with-redefs [producer/close! throw!]
           (async/close! ch)
           (u/try-take! (sink/done-chan sink)))

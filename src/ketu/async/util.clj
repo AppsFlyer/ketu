@@ -1,19 +1,6 @@
 (ns ketu.async.util
-  (:require [clojure.core.async :as async]
-            [clojure.set])
+  (:require [clojure.set])
   (:import (org.apache.kafka.common.serialization Deserializer Serializer)))
-
-(defn blocking-drain! [ch]
-  (loop [] (when (some? (async/<!! ch)) (recur))))
-
-(defn blocking-drain-all! [chs]
-  (blocking-drain! (async/merge chs)))
-
-(defn go-drain! [ch]
-  (async/go-loop [] (when (some? (async/<! ch)) (recur))))
-
-(defn go-drain-all! [chs]
-  (go-drain! (async/merge chs)))
 
 (defn- preset-deserializer-class [value-type]
   (case value-type
