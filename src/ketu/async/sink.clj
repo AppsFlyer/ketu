@@ -156,11 +156,11 @@
                       (finally
                         (log/info logger "[sink={} worker={}] Exit" sink-name %)))
                     (when (zero? (swap! remaining-sender-threads dec))
+                      (log/info logger "[sink={} auto-close] All workers are done" sink-name)
                       (when close-producer?
-                        (log/info logger "[sink={} auto-close] All workers are done" sink-name)
                         (try
                           (close-producer! state)
-                          (catch Throwable e
+                          (catch Exception e
                             (log/error logger "[sink={} auto-close] Error" sink-name e))))
                       (async/close! threads-done-chan))))
                (range sender-threads-num))]
