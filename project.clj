@@ -21,19 +21,18 @@
   :profiles {;; REPL, development and testing
              :dev
              {:source-paths ["dev"]
-              :plugins [[lein-cloverage "1.2.2"]]
+              :plugins      [[lein-cloverage "1.2.2"]]
               :dependencies [[org.clojure/tools.namespace "1.0.0"] ;For repl refresh
                              [tortue/spy "2.0.0"]
                              [metosin/sieppari "0.0.0-alpha13"]
                              [commons-io/commons-io "2.6"]
                              [ch.qos.logback/logback-classic "1.2.3"]
+                             [org.clojure/test.check "1.1.0"]
 
                              ; Kafka (docker in docker)
                              [org.testcontainers/kafka "1.16.0"]
-                             [clj-test-containers "0.4.0"]
-                             [net.java.dev.jna/jna "5.8.0"]
-                             [org.clojure/test.check "1.1.0"]]
-              :jvm-opts ["-Dlogback.configurationFile=dev-logback.xml"]}
+                             [clj-test-containers "0.4.0"]]
+              :jvm-opts     ["-Dlogback.configurationFile=dev-logback.xml"]}
 
              ;; Tests only, silent logs
              :test
