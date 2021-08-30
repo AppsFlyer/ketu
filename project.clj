@@ -31,7 +31,7 @@
 
                              ; Kafka (docker in docker)
                              [org.testcontainers/kafka "1.16.0"]
-                             [clj-test-containers "0.4.0"]]
+                             [clj-test-containers "0.5.0"]]
               :jvm-opts     ["-Dlogback.configurationFile=dev-logback.xml"]}
 
              ;; Tests only, silent logs

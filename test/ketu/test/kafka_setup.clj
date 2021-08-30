@@ -3,18 +3,17 @@
   (:import (org.testcontainers.containers KafkaContainer)
            (org.testcontainers.utility DockerImageName)))
 
-(def ^:private kafka-container (atom nil))
-(def ^:private ^:const container-port (KafkaContainer/KAFKA_PORT))
+(def ^:private ^:dynamic *kafka-container* nil)
 
 (defn get-bootstrap-servers
   ([]
-   (get-bootstrap-servers @kafka-container))
-  ([container]
-   (.getBootstrapServers ^KafkaContainer (:container container))))
+   (get-bootstrap-servers *kafka-container*))
+  ([kafka-container]
+   (.getBootstrapServers ^KafkaContainer (:container kafka-container))))
 
 (defn start-container []
   (-> {:container     (KafkaContainer. (DockerImageName/parse "confluentinc/cp-kafka:5.5.3"))
-       :exposed-ports [container-port]}
+       :exposed-ports [(KafkaContainer/KAFKA_PORT)]}
       tc/init
       tc/start!))
 
@@ -22,8 +21,8 @@
   (tc/stop! container))
 
 (defn with-kafka-container [test-fn]
-  (let [container (start-container)]
-    (reset! kafka-container container)
-    (test-fn)
-    (stop-container! container)
-    (reset! kafka-container nil)))
+  (binding [*kafka-container* (start-container)]
+    (try
+      (test-fn)
+      (finally
+        (stop-container! *kafka-container*)))))
