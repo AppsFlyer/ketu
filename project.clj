@@ -16,7 +16,7 @@
                  [org.clojure/core.async "1.3.610"]
                  [expound "0.8.5"]
                  [org.apache.kafka/kafka-clients "2.5.1"]
-                 [org.slf4j/slf4j-api "1.7.30"]]
+                 [org.slf4j/slf4j-api "1.7.32"]]
 
   :profiles {;; REPL, development and testing
              :dev
@@ -30,7 +30,7 @@
                              [org.clojure/test.check "1.1.0"]
 
                              ; Kafka (docker in docker)
-                             [org.testcontainers/kafka "1.16.0"]
+                             [org.testcontainers/kafka "1.16.2"]
                              [clj-test-containers "0.5.0"]]
               :jvm-opts     ["-Dlogback.configurationFile=dev-logback.xml"]}
 
