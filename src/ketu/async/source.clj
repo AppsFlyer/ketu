@@ -120,7 +120,7 @@
 
             (subscribe! consumer)
 
-            (while [@should-poll?]
+            (while @should-poll?
               (let [records (poll!)]
                 (run! put! records)))
 
