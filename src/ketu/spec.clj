@@ -2,7 +2,8 @@
   (:require [clojure.set]
             [clojure.spec.alpha :as s]
             [clojure.string]
-            [expound.alpha :as expound])
+            [expound.alpha :as expound]
+            [clojure.core.async.impl.protocols])
   (:import (java.util.regex Pattern)
            (org.apache.kafka.clients.producer Callback)
            (org.apache.kafka.common.serialization Deserializer Serializer)))
@@ -27,6 +28,7 @@
 (s/def :ketu.source/close-out-chan? boolean?)
 (s/def :ketu.source/close-consumer? boolean?)
 (s/def :ketu.source/create-rebalance-listener-obj fn?)
+(s/def :ketu.source/consumer-commands-chan #(extends? clojure.core.async.impl.protocols/ReadPort (type %)))
 
 (s/def :ketu.source.assign/topic :ketu/topic)
 (s/def :ketu.source.assign/partition-nums (s/coll-of nat-int?))
@@ -76,7 +78,8 @@
                 :ketu.source/consumer-close-timeout-ms
                 :ketu.source/consumer-thread-timeout-ms
                 :ketu.source/close-out-chan?
-                :ketu.source/close-consumer?]))
+                :ketu.source/close-consumer?
+                :ketu.source/consumer-commands-chan]))
 
 (s/def :ketu.apache.producer/config map?)
 (s/def :ketu.sink/sender-threads-num pos-int?)
