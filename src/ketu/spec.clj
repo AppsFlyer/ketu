@@ -40,7 +40,7 @@
           :schema (s/cat :type (s/and ::->keyword #{:vector :map})
                          :fields (s/+ (s/and ::->keyword
                                              #{:key :value :topic :partition :offset :timestamp :headers
-                                               :timestamp-type :leader-epoch :checksum
+                                               :timestamp-type :leader-epoch
                                                :serialized-key-size :serialized-value-size})))
           :custom (s/cat :type (s/and ::->keyword qualified-keyword?)
                          :fields (s/* any?))

@@ -15,12 +15,11 @@
         v "v"
         timestamp (long 2)
         timestamp-type (TimestampType/CREATE_TIME)
-        checksum 3
         ksize 4
         vsize 5
         headers (RecordHeaders. (Collections/singletonList (RecordHeader. "header-key" ^bytes (.getBytes "header-val"))))
         epoch (Optional/of (long 6))
-        r (ConsumerRecord. topic partition offset timestamp timestamp-type checksum ksize vsize k v headers epoch)]
+        r (ConsumerRecord. topic partition offset timestamp timestamp-type ksize vsize k v headers epoch)]
 
     (testing "Convert ConsumerRecord to data"
       (are [ks data] (= data (let [runtime-ks ks
@@ -38,7 +37,7 @@
         [:vector :value :headers] [v headers]
         [:vector :timestampType] [timestamp-type]
         [:vector :timestamp-type] [timestamp-type]
-        [:vector :timestamp :timestamp-type :checksum :serialized-key-size :serialized-value-size :leader-epoch] [timestamp timestamp-type checksum ksize vsize epoch]
+        [:vector :timestamp :timestamp-type :serialized-key-size :serialized-value-size :leader-epoch] [timestamp timestamp-type ksize vsize epoch]
         [:map :key :value] {:key k :value v}
         [:map :timestamp :timestamp-type] {:timestamp timestamp :timestamp-type timestamp-type}))))
 

@@ -8,7 +8,7 @@
 A Clojure Apache Kafka client with core.async api
 
 ```clojure
-[com.appsflyer/ketu "0.6.0"]
+[com.appsflyer/ketu "0.6.1"]
 ```
 
 ## Features
