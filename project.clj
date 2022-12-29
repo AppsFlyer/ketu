@@ -1,4 +1,4 @@
-(defproject com.appsflyer/ketu "0.6.1-SNAPSHOT"
+(defproject com.appsflyer/ketu "1.0.0-SNAPSHOT"
   :description "Clojure Apache Kafka client with core.async api"
   :url "https://github.com/AppsFlyer/ketu"
   :license {:name "Apache License, Version 2.0"
@@ -27,7 +27,6 @@
                              [metosin/sieppari "0.0.0-alpha13"]
                              [commons-io/commons-io "2.11.0"]
                              [ch.qos.logback/logback-classic "1.4.5"]
-                             [org.apache.kafka/kafka_2.12 "3.3.1"]
                              [org.clojure/test.check "1.1.1"]
                              ; Kafka (docker in docker)
                              [org.testcontainers/kafka "1.17.6"]

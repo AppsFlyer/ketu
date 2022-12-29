@@ -8,7 +8,7 @@
 A Clojure Apache Kafka client with core.async api
 
 ```clojure
-[com.appsflyer/ketu "0.6.1"]
+[com.appsflyer/ketu "1.0.0"]
 ```
 
 ## Features
@@ -60,6 +60,8 @@ Consume a name string from kafka and produce a greeting string for that name bac
 ## Configuration reference
 
 Anything that is not documented is not supported and might change.
+
+Read more about the default values used by the underline Kafka clients v3.3.1 [here](https://kafka.apache.org/33/documentation.html)
 
 Note: `int` is used for brevity but can also mean `long`. Don't worry about it.
 
