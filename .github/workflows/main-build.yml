@@ -9,6 +9,7 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-20.04
+    permissions: write-all
     steps:
       - name: Checkout
         uses: actions/checkout@v2
