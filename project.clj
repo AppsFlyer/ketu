@@ -16,21 +16,23 @@
                  [org.clojure/core.async "1.3.610"]
                  [expound "0.8.5"]
                  [org.apache.kafka/kafka-clients "2.5.1"]
-                 [org.slf4j/slf4j-api "1.7.30"]]
+                 [org.slf4j/slf4j-api "1.7.32"]]
 
   :profiles {;; REPL, development and testing
              :dev
              {:source-paths ["dev"]
-              :plugins [[lein-cloverage "1.2.4"]]
-              :dependencies [[org.clojure/tools.namespace "1.0.0"] ;For repl refresh
-                             [cloverage "1.2.4" :exclusions [org.clojure/tools.namespace org.clojure/tools.reader]]
+              :plugins      [[lein-cloverage "1.2.4"]]
+              :dependencies [[org.clojure/tools.namespace "1.3.0"] ;For repl refresh
                              [tortue/spy "2.0.0"]
                              [metosin/sieppari "0.0.0-alpha13"]
                              [commons-io/commons-io "2.6"]
                              [ch.qos.logback/logback-classic "1.2.3"]
-                             [org.apache.kafka/kafka_2.12 "2.5.1"]
-                             [org.clojure/test.check "1.1.0"]]
-              :jvm-opts ["-Dlogback.configurationFile=dev-logback.xml"]}
+                             [org.clojure/test.check "1.1.0"]
+
+                             ; Kafka (docker in docker)
+                             [org.testcontainers/kafka "1.16.2"]
+                             [clj-test-containers "0.5.0"]]
+              :jvm-opts     ["-Dlogback.configurationFile=dev-logback.xml"]}
 
              ;; Tests only, silent logs
              :test
