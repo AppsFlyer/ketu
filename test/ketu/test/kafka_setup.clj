@@ -12,7 +12,7 @@
    (.getBootstrapServers ^KafkaContainer (:container kafka-container))))
 
 (defn start-container []
-  (-> {:container     (KafkaContainer. (DockerImageName/parse "confluentinc/cp-kafka:5.5.3"))
+  (-> {:container     (KafkaContainer. (DockerImageName/parse "confluentinc/cp-kafka:7.3.1"))
        :exposed-ports [(KafkaContainer/KAFKA_PORT)]}
       tc/init
       tc/start!))
