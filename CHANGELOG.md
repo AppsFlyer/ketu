@@ -8,12 +8,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [1.0.0] - 2023-01-10
 
 ### Added
-
+- NA
 ### Changed
-
-- **[Breaking changes](https://www.confluent.io/blog/apache-kafka-3-0-major-improvements-and-new-features/)** - Java clients library `org.apache.kafka/kafka-clients` upgraded from [2.5.1](https://kafka.apache.org/25/documentation.html) to [3.3.1](https://kafka.apache.org/33/documentation.html)
-- Deprecate checksum from Ketu source shape schema following deprecation notice from [ConsumerRecord](https://github.com/apache/kafka/pull/10470) version 3.0
-- Upgrade various project dependencies
+- Use Kafka clients version 3.3.1.
+  - **[Breaking changes](https://www.confluent.io/blog/apache-kafka-3-0-major-improvements-and-new-features/)** - Java clients library `org.apache.kafka/kafka-clients` upgraded from [2.5.1](https://kafka.apache.org/25/documentation.html) to [3.3.1](https://kafka.apache.org/33/documentation.html)
+  - Java 11 or higher are supported
+- Refresh dependencies versions:
 
 | Dependency                        | From version | To version |
 |-----------------------------------|--------------|------------|
@@ -36,5 +36,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 | `org.testcontainers/kafka`       | 1.16.2       | 1.17.6     |
 | `clj-test-containers`            | 0.5.0        | 0.7.4      |
 
+### Deprecated
+- Deprecate checksum from Ketu source shape schema following deprecation notice from [ConsumerRecord](https://github.com/apache/kafka/pull/10470) version 3.0
+- Java 8 support had been deprecated since Apache Kafka 3 - [here](https://kafka.apache.org/33/documentation.html#java)
 
 ### Fixed
+- NA
