@@ -8,7 +8,7 @@
 A Clojure Apache Kafka client with core.async api
 
 ```clojure
-[com.appsflyer/ketu "0.6.0"]
+[com.appsflyer/ketu "1.0.0"]
 ```
 
 ## Features
@@ -61,30 +61,32 @@ Consume a name string from kafka and produce a greeting string for that name bac
 
 Anything that is not documented is not supported and might change.
 
+Read more about the default values used by the underlying Kafka clients v3.3.1 [here](https://kafka.apache.org/33/documentation.html)
+
 Note: `int` is used for brevity but can also mean `long`. Don't worry about it.
 
 #### Common options (both source and sink accept these)
-| Key | Type | Req? | Notes |
-|-----|------|------|-------|
-| :brokers | string | required | Comma separated `host:port` values e.g "broker1:9092,broker2:9092" |
-| :topic | string | required |  |
-| :name | string | required | Simple human-readable identifier, used in logs and thread names |
-| :key-type | `:string`,`:byte-array` | optional | Default `:byte-array`, used in configuring key serializer/deserializer |
-| :value-type | `:string`,`:byte-array` | optional | Default `:byte-array`, used in configuring value serializer/deserializer |
-| :internal-config | map | optional | A map of the underlying java client properties, for any extra lower level config |
+| Key              | Type                    | Req?     | Notes                                                                            |
+|------------------|-------------------------|----------|----------------------------------------------------------------------------------|
+| :brokers         | string                  | required | Comma separated `host:port` values e.g "broker1:9092,broker2:9092"               |
+| :topic           | string                  | required |                                                                                  |
+| :name            | string                  | required | Simple human-readable identifier, used in logs and thread names                  |
+| :key-type        | `:string`,`:byte-array` | optional | Default `:byte-array`, used in configuring key serializer/deserializer           |
+| :value-type      | `:string`,`:byte-array` | optional | Default `:byte-array`, used in configuring value serializer/deserializer         |
+| :internal-config | map                     | optional | A map of the underlying java client properties, for any extra lower level config |
 
 #### Consumer-source options
-| Key | Type | Req? | Notes |
-|-----|------|------|-------|
-| :group-id | string | required |  |
-| :shape | `:value:`, `[:vector <fields>]`,`[:map <fields>]`, or an arity-1 function of `ConsumerRecord` | optional | If unspecified, channel will contain ConsumerRecord objects. [Examples](#data-shapes) |
+| Key         | Type                                                                                          | Req?       | Notes                                                                                 |
+|-------------|-----------------------------------------------------------------------------------------------|------------|---------------------------------------------------------------------------------------|
+| :group-id   | string                                                                                        | required   |                                                                                       |
+| :shape      | `:value:`, `[:vector <fields>]`,`[:map <fields>]`, or an arity-1 function of `ConsumerRecord` | optional   | If unspecified, channel will contain ConsumerRecord objects. [Examples](#data-shapes) |
 
 #### Producer-sink options
-| Key | Type | Req? | Notes |
-|-----|------|------|-------|
-| :shape | `:value`, `[:vector <fields>]`,`[:map <fields>]`, or an arity-1 function of the input returning `ProducerRecord` | optional | If unspecified, you must put ProducerRecord objects on the channel. [Examples](#data-shapes) |
-| :compression-type | `"none"` `"gzip"` `"snappy"` `"lz4"` `"zstd"` | optional | Default `"none"`, values are same as "compression.type" of the java producer |
-| :workers | int | optional | Default `1`, number of threads that take from the channel and invoke the internal producer |
+| Key               | Type                                                                                                             | Req?       | Notes                                                                                          |
+|-------------------|------------------------------------------------------------------------------------------------------------------|------------|------------------------------------------------------------------------------------------------|
+| :shape            | `:value`, `[:vector <fields>]`,`[:map <fields>]`, or an arity-1 function of the input returning `ProducerRecord` | optional   | If unspecified, you must put ProducerRecord objects on the channel. [Examples](#data-shapes)   |
+| :compression-type | `"none"` `"gzip"` `"snappy"` `"lz4"` `"zstd"`                                                                    | optional   | Default `"none"`, values are same as "compression.type" of the java producer                   |
+| :workers          | int                                                                                                              | optional   | Default `1`, number of threads that take from the channel and invoke the internal producer     |
 
 ## Data shapes
 

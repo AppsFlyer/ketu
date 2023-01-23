@@ -1,4 +1,4 @@
-(defproject com.appsflyer/ketu "0.6.1-SNAPSHOT"
+(defproject com.appsflyer/ketu "1.0.0-SNAPSHOT"
   :description "Clojure Apache Kafka client with core.async api"
   :url "https://github.com/AppsFlyer/ketu"
   :license {:name "Apache License, Version 2.0"
@@ -12,26 +12,25 @@
                                       :username :env/clojars_user
                                       :password :env/clojars_pass}]]
 
-  :dependencies [[org.clojure/clojure "1.10.1"]
-                 [org.clojure/core.async "1.3.610"]
-                 [expound "0.8.5"]
-                 [org.apache.kafka/kafka-clients "2.5.1"]
-                 [org.slf4j/slf4j-api "1.7.32"]]
+  :dependencies [[org.clojure/clojure "1.11.1"]
+                 [org.clojure/core.async "1.6.673"]
+                 [expound "0.9.0"]
+                 [org.apache.kafka/kafka-clients "3.3.1"]
+                 [org.slf4j/slf4j-api "2.0.6"]]
 
   :profiles {;; REPL, development and testing
              :dev
              {:source-paths ["dev"]
-              :plugins      [[lein-cloverage "1.2.4"]]
+              :plugins [[lein-cloverage "1.2.4"]]
               :dependencies [[org.clojure/tools.namespace "1.3.0"] ;For repl refresh
-                             [tortue/spy "2.0.0"]
+                             [tortue/spy "2.13.0"]
                              [metosin/sieppari "0.0.0-alpha13"]
-                             [commons-io/commons-io "2.6"]
-                             [ch.qos.logback/logback-classic "1.2.3"]
-                             [org.clojure/test.check "1.1.0"]
-
+                             [commons-io/commons-io "2.11.0"]
+                             [ch.qos.logback/logback-classic "1.4.5"]
+                             [org.clojure/test.check "1.1.1"]
                              ; Kafka (docker in docker)
-                             [org.testcontainers/kafka "1.16.2"]
-                             [clj-test-containers "0.5.0"]]
+                             [org.testcontainers/kafka "1.17.6"]
+                             [clj-test-containers "0.7.4"]]
               :jvm-opts     ["-Dlogback.configurationFile=dev-logback.xml"]}
 
              ;; Tests only, silent logs
