@@ -1,5 +1,5 @@
 (ns ketu.async.source-test
-  (:require [clojure.test :refer [deftest testing is]]
+  (:require [clojure.test :refer [deftest testing is are]]
             [clojure.core.async :as async]
             [clojure.core.async.impl.protocols]
             [ketu.test.log :as log]
@@ -74,7 +74,7 @@
       (is (channel-closed? ch))))
 
   (testing "Closing consumer but not channel on error creating consumer-source when so configured"
-    ; We create the consumer internally so there's no point keeping it alive.
+                                        ; We create the consumer internally so there's no point keeping it alive.
     (let [closed-consumer? (atom false)
           opts {:name "name"
                 :topic "topic"
@@ -159,3 +159,67 @@
                   [:info "[source=test] Close consumer"]
                   [:info "[source=test] Exit consumer thread"]]
                  (log/events log-ctx))))))))
+
+
+(deftest source-opts-test
+  (testing "sanity"
+    (are [config expected] (= expected (source/parse-opts config))
+      {:topic "topic" :name "name"} {:ketu.source/consumer-supplier ketu.async.source/default-consumer-supplier
+                                     :ketu.source/consumer-close-timeout-ms 60000
+                                     :ketu.apache.consumer/config {"key.deserializer"
+                                                                   "org.apache.kafka.common.serialization.ByteArrayDeserializer"
+                                                                   "value.deserializer"
+                                                                   "org.apache.kafka.common.serialization.ByteArrayDeserializer"}
+                                     :ketu.source/topic "topic"
+                                     :ketu.source/consumer-thread-timeout-ms 60000
+                                     :ketu.source/close-out-chan? true
+                                     :ketu.source/close-consumer? true
+                                     :ketu.source/poll-timeout-ms 100
+                                     :ketu.source/value-type :byte-array
+                                     :ketu.source/done-putting-timeout-ms 60000
+                                     :ketu/name "name"
+                                     :ketu.source/key-type :byte-array}
+      )
+    )
+  (testing "ssl"
+    (are [config expected] (= expected (source/parse-opts config))
+      {:topic "topic"
+       :name "name"
+       :security-protocol "SSL"
+       :group-id "group-id"
+       :ssl-endpoint-identification-algorithm ""
+       :ssl-key-password "key-password"
+       :ssl-keystore-location "keystore-location"
+       :ssl-keystore-password "keystore-password"
+       :ssl-truststore-location "truststore-location"
+       :ssl-truststore-password "truststore-password"} {:ketu.source/consumer-supplier ketu.async.source/default-consumer-supplier
+                                                        :ketu.source/consumer-close-timeout-ms 60000
+                                                        :ketu.apache.consumer/config {"key.deserializer"
+                                                                                      "org.apache.kafka.common.serialization.ByteArrayDeserializer"
+                                                                                      "value.deserializer"
+                                                                                      "org.apache.kafka.common.serialization.ByteArrayDeserializer"
+                                                                                      "group.id" "group-id"
+                                                                                      "ssl.endpoint.identification.algorithm" ""
+                                                                                      "security.protocol" "SSL"
+                                                                                      "ssl.key.password" "key-password"
+                                                                                      "ssl.keystore.location" "keystore-location"
+                                                                                      "ssl.keystore.password" "keystore-password"
+                                                                                      "ssl.truststore.location" "truststore-location"
+                                                                                      "ssl.truststore.password" "truststore-password"}
+                                                        :ketu.source/topic "topic"
+                                                        :ketu.source/consumer-thread-timeout-ms 60000
+                                                        :ketu.source/close-out-chan? true
+                                                        :ketu.source/close-consumer? true
+                                                        :ketu.source/poll-timeout-ms 100
+                                                        :ketu.source/value-type :byte-array
+                                                        :ketu.source/done-putting-timeout-ms 60000
+                                                        :ketu/name "name"
+                                                        :ketu.apache.client/security-protocol "SSL"
+                                                        :ketu.apache.client/ssl-endpoint-identification-algorithm ""
+                                                        :ketu.apache.client/ssl-key-password "key-password"
+                                                        :ketu.apache.client/ssl-keystore-location "keystore-location"
+                                                        :ketu.apache.client/ssl-keystore-password "keystore-password"
+                                                        :ketu.apache.client/ssl-truststore-location "truststore-location"
+                                                        :ketu.apache.client/ssl-truststore-password "truststore-password"
+                                                        :ketu.source/group-id "group-id"
+                                                        :ketu.source/key-type :byte-array})))

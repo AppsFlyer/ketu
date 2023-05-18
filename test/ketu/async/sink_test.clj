@@ -1,5 +1,5 @@
 (ns ketu.async.sink-test
-  (:require [clojure.test :refer [deftest testing is]]
+  (:require [clojure.test :refer [deftest testing is are]]
             [spy.core :as spy]
             [spy.assert]
             [clojure.core.async :as async]
@@ -244,3 +244,60 @@
           (async/close! ch)
           (u/try-take! (sink/done-chan sink)))
         (is (some #{[:error "[sink=test auto-close] Error"]} (log/events appender)))))))
+(deftest source-opts-test
+  (testing "sanity"
+    (are [config expected] (= expected (sink/parse-opts config))
+      {:topic "topic" :name "name"} {:ketu.sink/close-producer? true
+                                     :ketu.sink/sender-threads-num 1
+                                     :ketu.sink/key-type :byte-array
+                                     :ketu.apache.producer/config
+                                     {"key.serializer" "org.apache.kafka.common.serialization.ByteArraySerializer"
+                                      "value.serializer" "org.apache.kafka.common.serialization.ByteArraySerializer"}
+                                     :ketu.sink/value-type :byte-array
+                                     :ketu.sink/producer-supplier
+                                     ketu.async.sink/default-producer-supplier
+                                     :ketu.sink/producer-close-timeout-ms 60000
+                                     :ketu/name "name"
+                                     :ketu/topic "topic"
+                                     :ketu.sink/sender-threads-timeout-ms 60000}
+      )
+    )
+  (testing "ssl"
+    (are [config expected] (= expected (sink/parse-opts config))
+      {:topic "topic"
+       :name "name"
+       :security-protocol "SSL"
+       :group-id "group-id"
+       :ssl-endpoint-identification-algorithm ""
+       :ssl-key-password "key-password"
+       :ssl-keystore-location "keystore-location"
+       :ssl-keystore-password "keystore-password"
+       :ssl-truststore-location "truststore-location"
+       :ssl-truststore-password "truststore-password"} {:ketu.sink/close-producer? true
+                                                        :ketu.apache.client/ssl-key-password "key-password"
+                                                        :ketu.sink/sender-threads-num 1
+                                                        :ketu.sink/key-type :byte-array
+                                                        :ketu.apache.producer/config {
+                                                                                      "group.id" "group-id"
+                                                                                      "value.serializer" "org.apache.kafka.common.serialization.ByteArraySerializer"
+                                                                                      "key.serializer" "org.apache.kafka.common.serialization.ByteArraySerializer"
+                                                                                      "ssl.endpoint.identification.algorithm" ""
+                                                                                      "security.protocol" "SSL"
+                                                                                      "ssl.key.password" "key-password"
+                                                                                      "ssl.truststore.location" "truststore-location"
+                                                                                      "ssl.truststore.password" "truststore-password"
+                                                                                      "ssl.keystore.location" "keystore-location"
+                                                                                      "ssl.keystore.password" "keystore-password"}
+                                                        :ketu.sink/value-type :byte-array
+                                                        :ketu.apache.client/security-protocol "SSL"
+                                                        :ketu.apache.client/ssl-keystore-password "keystore-password"
+                                                        :ketu.apache.client/ssl-truststore-password "truststore-password"
+                                                        :ketu.apache.client/ssl-keystore-location "keystore-location"
+                                                        :ketu.sink/producer-supplier ketu.async.sink/default-producer-supplier
+                                                        :ketu.apache.client/ssl-truststore-location "truststore-location"
+                                                        :ketu.sink/producer-close-timeout-ms 60000
+                                                        :ketu.source/group-id "group-id"
+                                                        :ketu/name "name"
+                                                        :ketu/topic "topic"
+                                                        :ketu.apache.client/ssl-endpoint-identification-algorithm ""
+                                                        :ketu.sink/sender-threads-timeout-ms 60000})))
