@@ -19,13 +19,6 @@
   [out-chan item abort-pending]
   (async/alts!! [[out-chan item] abort-pending] :priority true))
 
-(defn finalize-apache-config
-  "Returns opts with final :ketu.apache.consumer/config entry"
-  [opts]
-  (let [original-config (:ketu.apache.consumer/config opts)
-        config (util/set-ketu-to-apache-opts original-config opts)]
-    (assoc opts :ketu.apache.consumer/config config)))
-
 (defn default-consumer-supplier [opts]
   (let [key-type (:ketu.source/key-type opts)
         key-deserializer (when (instance? Deserializer key-type) key-type)
@@ -33,7 +26,7 @@
         value-deserializer (when (instance? Deserializer value-type) value-type)]
     (consumer/consumer (:ketu.apache.consumer/config opts) key-deserializer value-deserializer)))
 
-(defn default-opts []
+(defn- default-opts-fn []
   {:ketu.source/consumer-supplier default-consumer-supplier
    :ketu.source/key-type :byte-array
    :ketu.source/value-type :byte-array
@@ -43,11 +36,6 @@
    :ketu.source/consumer-thread-timeout-ms 60000
    :ketu.source/close-out-chan? true
    :ketu.source/close-consumer? true})
-
-(defn- finalize-opts [opts]
-  (-> (default-opts)
-      (merge opts)
-      (finalize-apache-config)))
 
 (defn- subscribe-fn
   "Returns a function that takes a consumer and subscribes to either a topic list or a pattern according to opts."
@@ -78,8 +66,8 @@
         poll-timeout-duration (Duration/ofMillis (:ketu.source/poll-timeout-ms opts))
         catching-poll? (:ketu.source.legacy/catching-poll? opts)]
     (if catching-poll?
-      ;TODO Eliminate catching poll ASAP.
-      ; Just in case of a production issue and generic error handling wasn't implemented yet.
+                                        ;TODO Eliminate catching poll ASAP.
+                                        ; Just in case of a production issue and generic error handling wasn't implemented yet.
       (fn []
         (try
           (consumer/poll! consumer poll-timeout-duration)
@@ -125,8 +113,8 @@
                 (run! put! records)))
 
             (catch WakeupException e
-              ; We wakeup the consumer on graceful shutdown after should-poll? is false.
-              ; If it's not false, somebody else woke the consumer up unexpectedly.
+                                        ; We wakeup the consumer on graceful shutdown after should-poll? is false.
+                                        ; If it's not false, somebody else woke the consumer up unexpectedly.
               (when @should-poll?
                 (log/error logger "[source={}] Unexpected consumer wakeup" source-name e)))
             (catch Exception e
@@ -153,12 +141,13 @@
 
     state))
 
+(def parse-opts (partial util/parse-opts :ketu/public-source-opts :ketu.apache.consumer/config default-opts-fn))
+
 (defn source
   "Starts consuming into a channel.
   Returns a state map including out-chan. Pass it to the `stop!` function when done."
   [ch opts]
-  (let [opts (ketu.spec/assert-and-conform :ketu/public-source-opts opts)
-        opts (finalize-opts opts)
+  (let [opts (parse-opts opts)
         source-name (:ketu/name opts)
         consumer-supplier (:ketu.source/consumer-supplier opts)
         consumer (try

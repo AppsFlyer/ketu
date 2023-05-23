@@ -53,6 +53,13 @@
                      producer-close-timeout-ms (gen/large-integer* {:min 1})]
                     (let [sink-opts {:ketu/name name
                                      :ketu/topic topic
+                                     :ketu.apache.client/security-protocol "SSL"
+                                     :ketu.apache.client/ssl-endpoint-identification-algorithm ""
+                                     :ketu.apache.client/ssl-keystore-location "keystore.p12"
+                                     :ketu.apache.client/ssl-keystore-password "keystore-password"
+                                     :ketu.apache.client/ssl-truststore-location "truststore.p12"
+                                     :ketu.apache.client/ssl-truststore-password "truststore-password"
+                                     :ketu.apache.client/ssl-key-password "key-password"
                                      :ketu.sink/shape shape
                                      :ketu.sink/sender-threads-num sender-threads-num
                                      :ketu.sink/sender-threads-timeout-ms sender-threads-timeout-ms

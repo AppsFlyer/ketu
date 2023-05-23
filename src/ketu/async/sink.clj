@@ -96,13 +96,6 @@
     (some? shape) (shape/->record-fn opts shape)
     :else identity))
 
-(defn finalize-apache-config
-  "Returns opts with final :ketu.apache.producer/config entry"
-  [opts]
-  (let [original-config (:ketu.apache.producer/config opts)
-        config (util/set-ketu-to-apache-opts original-config opts)]
-    (assoc opts :ketu.apache.producer/config config)))
-
 (defn default-producer-supplier [opts]
   (let [key-type (:ketu.sink/key-type opts)
         key-serializer (when (instance? Serializer key-type) key-type)
@@ -110,7 +103,7 @@
         value-serializer (when (instance? Serializer value-type) value-type)]
     (producer/producer (:ketu.apache.producer/config opts) key-serializer value-serializer)))
 
-(defn default-opts []
+(defn- default-opts-fn []
   {:ketu.sink/producer-supplier default-producer-supplier
    :ketu.sink/key-type :byte-array
    :ketu.sink/value-type :byte-array
@@ -118,11 +111,6 @@
    :ketu.sink/producer-close-timeout-ms 60000
    :ketu.sink/sender-threads-timeout-ms 60000
    :ketu.sink/close-producer? true})
-
-(defn- finalize-opts [opts]
-  (-> (default-opts)
-      (merge opts)
-      (finalize-apache-config)))
 
 (defn- sink-existing-producer
   [producer in-chan opts]
@@ -168,14 +156,15 @@
         (assoc :ketu.sink/sender-threads sender-threads
                :ketu.sink/sender-threads-done threads-done-chan))))
 
+(def parse-opts (partial util/parse-opts :ketu/public-sink-opts :ketu.apache.producer/config default-opts-fn))
+
 (defn sink
   "Sends ProducerRecord's from in-chan to kafka.
   Closes the producer by default when in-chan is exhausted or when calling `stop!`
   If `:ketu.sink/close-producer?` is set to `false` the user will have to close
   the producer manually."
   [in-chan opts]
-  (let [opts (ketu.spec/assert-and-conform :ketu/public-sink-opts opts)
-        opts (finalize-opts opts)
+  (let [opts (parse-opts opts)
         sink-name (:ketu/name opts)
         producer-supplier (:ketu.sink/producer-supplier opts)
         producer (producer-supplier opts)]

@@ -13,6 +13,14 @@
 (s/def :ketu/name ::non-blank-string)
 (s/def :ketu/brokers ::non-blank-string)
 (s/def :ketu/topic ::non-blank-string)
+(s/def :ketu.apache.client/security-protocol #{"SSL"})
+(s/def :ketu.apache.client/ssl-truststore-location ::non-blank-string) ;; /var/private/ssl/kafka.client.truststore.jks
+(s/def :ketu.apache.client/ssl-truststore-password ::non-blank-string) ;; test1234
+(s/def :ketu.apache.client/ssl-keystore-location ::non-blank-string) ;; /var/private/ssl/kafka.client.keystore.jks
+(s/def :ketu.apache.client/ssl-keystore-password ::non-blank-string) ;; test1234
+(s/def :ketu.apache.client/ssl-key-password ::non-blank-string) ;; test1234
+(s/def :ketu.apache.client/ssl-endpoint-identification-algorithm string?) ;; test1234
+
 (s/def :ketu.apache.consumer/auto-offset-reset #{"earliest" "latest" "none"})
 (s/def :ketu.apache.producer/compression-type #{"none" "gzip" "snappy" "lz4" "zstd"})
 
@@ -64,19 +72,29 @@
           :class class?
           :class-name string?)))
 
+(s/def :ketu/client-opts
+  (s/keys :opt [:ketu.apache.client/security-protocol
+                :ketu.apache.client/ssl-truststore-location
+                :ketu.apache.client/ssl-truststore-password
+                :ketu.apache.client/ssl-keystore-location
+                :ketu.apache.client/ssl-keystore-password
+                :ketu.apache.client/ssl-key-password
+                :ketu.apache.client/ssl-endpoint-identification-algorithm]))
+
 (s/def :ketu/source-opts
-  (s/keys :req [:ketu/name
-                (or :ketu.source/topic
-                    :ketu.source/topic-list
-                    :ketu.source/topic-pattern
-                    :ketu.source/assign-single-topic-partitions)]
-          :opt [:ketu.source/shape
-                :ketu.source/poll-timeout-ms
-                :ketu.source/done-putting-timeout-ms
-                :ketu.source/consumer-close-timeout-ms
-                :ketu.source/consumer-thread-timeout-ms
-                :ketu.source/close-out-chan?
-                :ketu.source/close-consumer?]))
+  (s/merge :ketu/client-opts
+           (s/keys :req [:ketu/name
+                         (or :ketu.source/topic
+                             :ketu.source/topic-list
+                             :ketu.source/topic-pattern
+                             :ketu.source/assign-single-topic-partitions)]
+                   :opt [:ketu.source/shape
+                         :ketu.source/poll-timeout-ms
+                         :ketu.source/done-putting-timeout-ms
+                         :ketu.source/consumer-close-timeout-ms
+                         :ketu.source/consumer-thread-timeout-ms
+                         :ketu.source/close-out-chan?
+                         :ketu.source/close-consumer?])))
 
 (s/def :ketu.apache.producer/config map?)
 (s/def :ketu.sink/sender-threads-num pos-int?)
@@ -96,13 +114,14 @@
           :class-name string?)))
 
 (s/def :ketu/sink-opts
-  (s/keys :req [:ketu/name]
-          :opt [:ketu/topic
-                :ketu.sink/shape
-                :ketu.sink/sender-threads-num
-                :ketu.sink/sender-threads-timeout-ms
-                :ketu.sink/close-producer?
-                :ketu.sink/producer-close-timeout-ms]))
+  (s/merge :ketu/client-opts
+           (s/keys :req [:ketu/name]
+                   :opt [:ketu/topic
+                         :ketu.sink/shape
+                         :ketu.sink/sender-threads-num
+                         :ketu.sink/sender-threads-timeout-ms
+                         :ketu.sink/close-producer?
+                         :ketu.sink/producer-close-timeout-ms])))
 
 ;; Coercing keys to canonical form
 
@@ -115,23 +134,23 @@
   {:name :ketu/name})
 
 (def consumer-kmap
-  {:shape :ketu.source/shape
-   :key-type :ketu.source/key-type
-   :value-type :ketu.source/value-type
-   :topic :ketu.source/topic
-   :topic-list :ketu.source/topic-list
-   :topic-pattern :ketu.source/topic-pattern
+  {:shape           :ketu.source/shape
+   :key-type        :ketu.source/key-type
+   :value-type      :ketu.source/value-type
+   :topic           :ketu.source/topic
+   :topic-list      :ketu.source/topic-list
+   :topic-pattern   :ketu.source/topic-pattern
    :internal-config :ketu.apache.consumer/config})
 
 (def producer-kmap
-  {:topic :ketu/topic
-   :shape :ketu.sink/shape
-   :key-type :ketu.sink/key-type
-   :value-type :ketu.sink/value-type
-   :workers :ketu.sink/sender-threads-num
+  {:topic           :ketu/topic
+   :shape           :ketu.sink/shape
+   :key-type        :ketu.sink/key-type
+   :value-type      :ketu.sink/value-type
+   :workers         :ketu.sink/sender-threads-num
    :internal-config :ketu.apache.producer/config})
 
-; truncate namespace
+;; truncate namespace
 (def unnamespaced-kmap
   (->unnamespaced-kmap
     [:ketu/brokers
@@ -139,13 +158,23 @@
      :ketu.source/create-rebalance-listener-obj
      :ketu.sink/create-callback
      :ketu.apache.consumer/auto-offset-reset
-     :ketu.apache.producer/compression-type]))
+     :ketu.apache.producer/compression-type
+     :ketu.apache.client/security-protocol
+     :ketu.apache.client/ssl-truststore-location
+     :ketu.apache.client/ssl-truststore-password
+     :ketu.apache.client/ssl-keystore-location
+     :ketu.apache.client/ssl-keystore-password
+     :ketu.apache.client/ssl-key-password
+     :ketu.apache.client/ssl-endpoint-identification-algorithm]))
+
+(defn rename-keys [m kmap]
+  (clojure.set/rename-keys m (merge unnamespaced-kmap common-kmap kmap)))
 
 (defn rename-source-keys [m]
-  (clojure.set/rename-keys m (merge unnamespaced-kmap common-kmap consumer-kmap)))
+  (rename-keys m consumer-kmap))
 
 (defn rename-sink-keys [m]
-  (clojure.set/rename-keys m (merge unnamespaced-kmap common-kmap producer-kmap)))
+  (rename-keys m producer-kmap))
 
 (s/def :ketu/public-source-opts
   (s/and (s/conformer rename-source-keys)

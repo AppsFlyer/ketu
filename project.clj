@@ -1,4 +1,4 @@
-(defproject com.appsflyer/ketu "1.0.1-SNAPSHOT"
+(defproject com.appsflyer/ketu "1.1.0-SNAPSHOT"
   :description "Clojure Apache Kafka client with core.async api"
   :url "https://github.com/AppsFlyer/ketu"
   :license {:name "Apache License, Version 2.0"
@@ -15,7 +15,7 @@
   :dependencies [[org.clojure/clojure "1.11.1"]
                  [org.clojure/core.async "1.6.673"]
                  [expound "0.9.0"]
-                 [org.apache.kafka/kafka-clients "3.3.1"]
+                 [org.apache.kafka/kafka-clients "3.4.0"]
                  [org.slf4j/slf4j-api "2.0.6"]]
 
   :profiles {;; REPL, development and testing

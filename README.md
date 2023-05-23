@@ -88,6 +88,17 @@ Note: `int` is used for brevity but can also mean `long`. Don't worry about it.
 | :compression-type | `"none"` `"gzip"` `"snappy"` `"lz4"` `"zstd"`                                                                    | optional   | Default `"none"`, values are same as "compression.type" of the java producer                   |
 | :workers          | int                                                                                                              | optional   | Default `1`, number of threads that take from the channel and invoke the internal producer     |
 
+#### SSL Client options
+| Key                | Type                                                                                                             | Req?       | Notes                                                                                          |
+|-----------------------------------------|-------------------------------------------------------|------------|--------------------------------------------------------------------------------------------|
+| :security-protocol                      | `"PLAINTEXT"` `"SSL"` `"SASL_PLAINTEXT"` `"SASL_SSL"` | optional   | Protocol used to communicate with brokers.                                                 |
+| :ssl-endpoint-identification-algorithm  | `"http"` `""`                                         | optional   | The endpoint identification algorithm to validate server hostname using server certificate |
+| :ssl-key-password                       | string                                                | optional   | The password of the private key in the key store file. This is optional for client         |
+| :ssl-truststore-location                | string                                                | optional   | The location of the trust store file                                                       |
+| :ssl-truststore-password                | string                                                | optional   | The password for the trust store file                                                      |
+| :ssl-keystore-location                  | string                                                | optional   | The location of the key store file                                                         |
+| :ssl-keystore-password                  | string                                                | optional   | The password for the key store file                                                        |
+
 ## Data shapes
 
 You don't have to deal with ConsumerRecord or ProducerRecord objects.<br>
