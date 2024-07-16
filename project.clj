@@ -21,7 +21,8 @@
   :profiles {;; REPL, development and testing
              :dev
              {:source-paths ["dev"]
-              :plugins [[lein-cloverage "1.2.4"]]
+              :plugins [[lein-cloverage "1.2.4"]
+                        [lein-eftest "0.5.9"]]
               :dependencies [[org.clojure/tools.namespace "1.3.0"] ;For repl refresh
                              [tortue/spy "2.13.0"]
                              [metosin/sieppari "0.0.0-alpha13"]
