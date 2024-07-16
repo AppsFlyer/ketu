@@ -32,7 +32,10 @@
                              ; Kafka (docker in docker)
                              [org.testcontainers/kafka "1.17.6"]
                              [clj-test-containers "0.7.4"]]
-              :jvm-opts     ["-Dlogback.configurationFile=dev-logback.xml"]}
+              :jvm-opts     ["-Dlogback.configurationFile=dev-logback.xml"]
+              :eftest         {:multithread?   false
+                               :report         eftest.report.junit/report
+                               :report-to-file "target/junit.xml"}}
 
              ;; Tests only, silent logs
              :test
