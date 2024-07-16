@@ -84,8 +84,8 @@ jobs:
         env:
           SNAPSHOT_REGEX: ^[0-9]{1,2}[.][0-9]{1,2}[.][0-9]{1,3}-SNAPSHOT$
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CLOJARS_USERNAME: ${{ secrets.CLOJARS_USERNAME }}
-          CLOJARS_PASSWORD: ${{ secrets.CLOJARS_PASSWORD }}
+          CLOJARS_USERNAME: ${{ secrets.CLOJARS_USER }}
+          CLOJARS_PASSWORD: ${{ secrets.CLOJARS_PASS }}
         run: |
           git config --global user.name "github-actions-bot"
           git config --global user.email "<>"
