@@ -113,9 +113,11 @@
         ->data (->data-fn opts)
         put! (fn [record] (put-or-abort-pending! out-chan (->data record) abort-pending-put))
 
-        maybe-execute-custom-command (if (some? commands-chan)
-                                       (fn [] (when-let [command (async/poll! commands-chan)]
-                                                (command {:ketu.source/consumer consumer})))
+        optionally-execute-commands! (if (some? commands-chan)
+                                       (fn [] (loop []
+                                                (when-let [command (async/poll! commands-chan)]
+                                                  (command {:ketu.source/consumer consumer})
+                                                  (recur))))
                                        (fn []))
         consumer-thread
         (async/thread
@@ -126,7 +128,7 @@
             (subscribe! consumer)
 
             (while @should-poll?
-              (maybe-execute-custom-command)
+              (optionally-execute-commands!)
               (let [records (poll!)]
                 (run! put! records)))
 
