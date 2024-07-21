@@ -103,7 +103,9 @@
         ^long close-consumer? (:ketu.source/close-consumer? opts)
         consumer-close-timeout-ms (:ketu.source/consumer-close-timeout-ms opts)
         commands-chan (:ketu.source/consumer-commands-chan opts)
-
+        interceptor-fn (or (some-> (:ketu.source/consumer-interceptor opts)
+                                   (partial consumer))
+                           identity)
         should-poll? (volatile! true)
         abort-pending-put (async/chan)
         done-putting (async/chan)
@@ -129,7 +131,7 @@
 
             (while @should-poll?
               (optionally-execute-commands!)
-              (let [records (poll!)]
+              (let [records (interceptor-fn (poll!))]
                 (run! put! records)))
 
             (catch WakeupException e
