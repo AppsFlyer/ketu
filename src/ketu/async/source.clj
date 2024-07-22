@@ -102,9 +102,8 @@
         close-out-chan? (:ketu.source/close-out-chan? opts)
         ^long close-consumer? (:ketu.source/close-consumer? opts)
         consumer-close-timeout-ms (:ketu.source/consumer-close-timeout-ms opts)
-        commands-chan (:ketu.source/consumer-commands-chan opts)
         interceptor-fn (or (some-> (:ketu.source/consumer-interceptor opts)
-                                   (partial consumer))
+                                   (partial {:ketu.source/consumer consumer}))
                            identity)
         should-poll? (volatile! true)
         abort-pending-put (async/chan)
@@ -115,12 +114,6 @@
         ->data (->data-fn opts)
         put! (fn [record] (put-or-abort-pending! out-chan (->data record) abort-pending-put))
 
-        optionally-execute-commands! (if (some? commands-chan)
-                                       (fn [] (loop []
-                                                (when-let [command (async/poll! commands-chan)]
-                                                  (command {:ketu.source/consumer consumer})
-                                                  (recur))))
-                                       (fn []))
         consumer-thread
         (async/thread
           (try
@@ -130,7 +123,6 @@
             (subscribe! consumer)
 
             (while @should-poll?
-              (optionally-execute-commands!)
               (let [records (interceptor-fn (poll!))]
                 (run! put! records)))
 

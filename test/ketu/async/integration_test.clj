@@ -212,41 +212,6 @@
         (source/stop! source)
         (.close ^AdminClient admin-client)))))
 
-(deftest commands-channel
-  (let [commands-chan (async/chan 10)
-        consumer-chan (async/chan 10)
-        result-chan (async/chan 10)
-        clicks-consumer-opts {:name "clicks-consumer"
-                              :brokers (kafka-setup/get-bootstrap-servers)
-                              :topic "clicks"
-                              :group-id "clicks-test-consumer"
-                              :auto-offset-reset "earliest"
-                              :ketu.source/consumer-commands-chan commands-chan}
-        source (source/source consumer-chan clicks-consumer-opts)]
-    (try
-      (async/>!! commands-chan (fn [{consumer :ketu.source/consumer}] (async/>!! result-chan [:1 consumer])))
-      (async/>!! commands-chan (fn [{consumer :ketu.source/consumer}]
-                                 (try
-                                   (.pause consumer (.assignment consumer))
-                                   (async/>!! result-chan [:2 :success])
-                                   (catch Exception _
-                                     (async/>!! result-chan [:2 :failed])))))
-      (async/>!! commands-chan (fn [{consumer :ketu.source/consumer}]
-                                 (try
-                                   (.resume consumer (.paused consumer))
-                                   (async/>!! result-chan [:3 :success])
-                                   (catch Exception _
-                                     (async/>!! result-chan [:3 :failed])))))
-
-      (let [expected [[:1 (:ketu.source/consumer source)]
-                      [:2 :success]
-                      [:3 :success]]
-            actual (doall (mapv (fn [_] (u/try-take! result-chan)) (range 3)))]
-        (is (= expected actual)))
-      (finally
-        (Thread/sleep 2000)
-        (source/stop! source)))))
-
 (deftest consumer-interceptor
   (let [consumer-chan (async/chan 10)
         result-chan (async/chan 100)
@@ -256,7 +221,7 @@
                               :group-id "clicks-test-consumer"
                               :auto-offset-reset "earliest"
                               :shape :value
-                              :ketu.source/consumer-interceptor (fn [_consumer records]
+                              :ketu.source/consumer-interceptor (fn [{_consumer :ketu.source/consumer} records]
                                                                   (doseq [^ConsumerRecord record records]
                                                                     (async/>!! result-chan (String. ^"[B" (.value record))))
                                                                   records)}

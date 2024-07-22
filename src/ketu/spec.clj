@@ -28,7 +28,6 @@
 (s/def :ketu.source/close-out-chan? boolean?)
 (s/def :ketu.source/close-consumer? boolean?)
 (s/def :ketu.source/create-rebalance-listener-obj fn?)
-(s/def :ketu.source/consumer-commands-chan #(extends? clojure.core.async.impl.protocols/ReadPort (type %)))
 (s/def :ketu.source/consumer-interceptor fn?)
 (s/def :ketu.source.assign/topic :ketu/topic)
 (s/def :ketu.source.assign/partition-nums (s/coll-of nat-int?))
