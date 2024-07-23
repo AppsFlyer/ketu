@@ -212,19 +212,20 @@
         (source/stop! source)
         (.close ^AdminClient admin-client)))))
 
-(deftest consumer-interceptor
+(deftest consumer-decorator
   (let [consumer-chan (async/chan 10)
         result-chan (async/chan 100)
-        clicks-consumer-opts {:name "clicks-consumer"
-                              :brokers (kafka-setup/get-bootstrap-servers)
-                              :topic "clicks"
-                              :group-id "clicks-test-consumer"
-                              :auto-offset-reset "earliest"
-                              :shape :value
-                              :ketu.source/consumer-interceptor (fn [{_consumer :ketu.source/consumer} records]
+        clicks-consumer-opts {:name                           "clicks-consumer"
+                              :brokers                        (kafka-setup/get-bootstrap-servers)
+                              :topic                          "clicks"
+                              :group-id                       "clicks-test-consumer"
+                              :auto-offset-reset              "earliest"
+                              :shape                          :value
+                              :ketu.source/consumer-decorator (fn [{_consumer :ketu.source/consumer} poll-fn]
+                                                                (let [records (poll-fn)]
                                                                   (doseq [^ConsumerRecord record records]
                                                                     (async/>!! result-chan (String. ^"[B" (.value record))))
-                                                                  records)}
+                                                                  records))}
         source (source/source consumer-chan clicks-consumer-opts)
         clicks-producer-opts {:name            "clicks-producer"
                               :brokers         (kafka-setup/get-bootstrap-servers)

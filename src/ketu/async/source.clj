@@ -102,15 +102,18 @@
         close-out-chan? (:ketu.source/close-out-chan? opts)
         ^long close-consumer? (:ketu.source/close-consumer? opts)
         consumer-close-timeout-ms (:ketu.source/consumer-close-timeout-ms opts)
-        interceptor-fn (or (some-> (:ketu.source/consumer-interceptor opts)
-                                   (partial {:ketu.source/consumer consumer}))
-                           identity)
+        decorator-fn (some-> (:ketu.source/consumer-decorator opts)
+                             (partial {:ketu.source/consumer consumer}))
+
         should-poll? (volatile! true)
         abort-pending-put (async/chan)
         done-putting (async/chan)
 
         subscribe! (or (subscribe-fn opts) (assign-fn opts))
-        poll! (poll-fn consumer opts)
+        poll-impl (poll-fn consumer opts)
+        poll! (if (some? decorator-fn)
+                (partial decorator-fn poll-impl)
+                poll-impl)
         ->data (->data-fn opts)
         put! (fn [record] (put-or-abort-pending! out-chan (->data record) abort-pending-put))
 
@@ -123,7 +126,7 @@
             (subscribe! consumer)
 
             (while @should-poll?
-              (let [records (interceptor-fn (poll!))]
+              (let [records (poll!)]
                 (run! put! records)))
 
             (catch WakeupException e
