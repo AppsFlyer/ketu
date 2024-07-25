@@ -105,8 +105,7 @@
         consumer-close-timeout-ms (:ketu.source/consumer-close-timeout-ms opts)
         should-poll? (volatile! true)
         decorator-fn (some-> (:ketu.source/consumer-decorator opts)
-                             (partial {:ketu.source/consumer consumer
-                                       :ketu.source/should-poll? should-poll?}))
+                             (partial {:ketu.source/consumer consumer}))
 
         abort-pending-put (async/chan)
         done-putting (async/chan)
