@@ -76,11 +76,11 @@ Note: `int` is used for brevity but can also mean `long`. Don't worry about it.
 | :internal-config | map                     | optional | A map of the underlying java client properties, for any extra lower level config |
 
 #### Consumer-source options
-| Key         | Type                                                                                          | Req?       | Notes                                                                                 |
-|-------------|-----------------------------------------------------------------------------------------------|------------|---------------------------------------------------------------------------------------|
-| :group-id   | string                                                                                        | required   |                                                                                       |
-| :shape      | `:value:`, `[:vector <fields>]`,`[:map <fields>]`, or an arity-1 function of `ConsumerRecord` | optional   | If unspecified, channel will contain ConsumerRecord objects. [Examples](#data-shapes) |
-| :ketu.source/consumer-commands-chan | channel | optional | Used for passing custom functions to be executed from within the poll loop. Items of this channel are expected to be of type `fn[x]`. One example for using this channel is to enable pausing/resuming of the underlying kafka consumer, since trying to do that outside the poll loop causes a `ConcurrentModificationException` to be thrown. [Example](#example-of-using-the-custom-commands-channel) |
+| Key                             | Type                                                                                          | Req?       | Notes                                                                                 |
+|---------------------------------|-----------------------------------------------------------------------------------------------|------------|---------------------------------------------------------------------------------------|
+| :group-id                       | string                                                                                        | required   |                                                                                       |
+| :shape                          | `:value:`, `[:vector <fields>]`,`[:map <fields>]`, or an arity-1 function of `ConsumerRecord` | optional   | If unspecified, channel will contain ConsumerRecord objects. [Examples](#data-shapes) |
+| :ketu.source/consumer-decorator | fucntion                                                                                      | optional | .....                                                                                |
 
 
 #### Producer-sink options

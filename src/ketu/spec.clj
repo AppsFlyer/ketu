@@ -78,8 +78,7 @@
                 :ketu.source/consumer-thread-timeout-ms
                 :ketu.source/close-out-chan?
                 :ketu.source/close-consumer?
-                :ketu.source/consumer-commands-chan
-                :ketu.source/consumer-interceptors]))
+                :ketu.source/consumer-decorator]))
 
 (s/def :ketu.apache.producer/config map?)
 (s/def :ketu.sink/sender-threads-num pos-int?)
