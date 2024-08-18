@@ -1,4 +1,4 @@
-(defproject com.appsflyer/ketu "1.0.1-SNAPSHOT"
+(defproject com.appsflyer/ketu "1.1.0-SNAPSHOT"
   :description "Clojure Apache Kafka client with core.async api"
   :url "https://github.com/AppsFlyer/ketu"
   :license {:name "Apache License, Version 2.0"
@@ -21,7 +21,8 @@
   :profiles {;; REPL, development and testing
              :dev
              {:source-paths ["dev"]
-              :plugins [[lein-cloverage "1.2.4"]]
+              :plugins [[lein-cloverage "1.2.4"]
+                        [lein-eftest "0.5.9"]]
               :dependencies [[org.clojure/tools.namespace "1.3.0"] ;For repl refresh
                              [tortue/spy "2.13.0"]
                              [metosin/sieppari "0.0.0-alpha13"]
@@ -31,7 +32,10 @@
                              ; Kafka (docker in docker)
                              [org.testcontainers/kafka "1.17.6"]
                              [clj-test-containers "0.7.4"]]
-              :jvm-opts     ["-Dlogback.configurationFile=dev-logback.xml"]}
+              :jvm-opts     ["-Dlogback.configurationFile=dev-logback.xml"]
+              :eftest         {:multithread?   false
+                               :report         eftest.report.junit/report
+                               :report-to-file "target/junit.xml"}}
 
              ;; Tests only, silent logs
              :test

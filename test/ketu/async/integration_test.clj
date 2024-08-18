@@ -12,7 +12,7 @@
   (:import (java.time Duration)
            (org.apache.kafka.common PartitionInfo TopicPartition)
            (org.apache.kafka.clients.producer RecordMetadata)
-           (org.apache.kafka.clients.consumer Consumer)
+           (org.apache.kafka.clients.consumer Consumer ConsumerRecord)
            (org.apache.kafka.clients.admin AdminClient NewTopic)
            (java.util.concurrent TimeUnit)))
 
@@ -211,3 +211,39 @@
         (source/stop! source-rebalance)
         (source/stop! source)
         (.close ^AdminClient admin-client)))))
+
+(deftest consumer-decorator
+  (let [consumer-chan (async/chan 10)
+        result-chan (async/chan 100)
+        clicks-consumer-opts {:name                           "clicks-consumer"
+                              :brokers                        (kafka-setup/get-bootstrap-servers)
+                              :topic                          "clicks"
+                              :group-id                       "clicks-test-consumer"
+                              :auto-offset-reset              "earliest"
+                              :shape                          :value
+                              :ketu.source/consumer-decorator (fn [{_consumer :ketu.source/consumer} poll-fn]
+                                                                (let [records (poll-fn)]
+                                                                  (doseq [^ConsumerRecord record records]
+                                                                    (async/>!! result-chan (String. ^"[B" (.value record))))
+                                                                  records))}
+        source (source/source consumer-chan clicks-consumer-opts)
+        clicks-producer-opts {:name            "clicks-producer"
+                              :brokers         (kafka-setup/get-bootstrap-servers)
+                              :topic           "clicks"
+                              :key-type        :string
+                              :internal-config {"value.serializer" "org.apache.kafka.common.serialization.StringSerializer"}
+                              :shape           [:vector :key :value]}
+        producer-chan (async/chan 10)
+        sink (sink/sink producer-chan clicks-producer-opts)
+        input-values #{"1" "2" "3"}]
+    (try
+      (doseq [value input-values]
+        (async/>!! producer-chan ["1" value]))
+      (is (= input-values (into #{} (repeatedly 3 #(u/try-take! result-chan)))))
+      (is (= input-values (into #{} (map #(String. ^"[B" %)) (repeatedly 3 #(u/try-take! consumer-chan)))))
+      (finally
+        (Thread/sleep 2000)
+        (source/stop! source)
+        (async/close! producer-chan)
+        (sink/stop! sink)))))
+

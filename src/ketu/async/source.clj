@@ -73,21 +73,22 @@
       (fn [consumer]
         (consumer/assign! consumer (consumer/topic-partitions topic partitions))))))
 
-(defn- poll-fn [^Consumer consumer opts]
-  (let [source-name (:ketu/name opts)
-        poll-timeout-duration (Duration/ofMillis (:ketu.source/poll-timeout-ms opts))
-        catching-poll? (:ketu.source.legacy/catching-poll? opts)]
-    (if catching-poll?
-      ;TODO Eliminate catching poll ASAP.
-      ; Just in case of a production issue and generic error handling wasn't implemented yet.
-      (fn []
-        (try
-          (consumer/poll! consumer poll-timeout-duration)
-          (catch Exception e
-            (log/error logger "[source={}] Caught poll exception" source-name e)
-            nil)))
-      (fn []
-        (consumer/poll! consumer poll-timeout-duration)))))
+(defn- poll-fn [^Consumer consumer should-poll? opts]
+  (when @should-poll?
+    (let [source-name           (:ketu/name opts)
+          poll-timeout-duration (Duration/ofMillis (:ketu.source/poll-timeout-ms opts))
+          catching-poll?        (:ketu.source.legacy/catching-poll? opts)]
+      (if catching-poll?
+        ;TODO Eliminate catching poll ASAP.
+        ; Just in case of a production issue and generic error handling wasn't implemented yet.
+        (fn []
+          (try
+            (consumer/poll! consumer poll-timeout-duration)
+            (catch Exception e
+              (log/error logger "[source={}] Caught poll exception" source-name e)
+              [])))
+        (fn []
+          (consumer/poll! consumer poll-timeout-duration))))))
 
 (defn- ->data-fn [{:keys [ketu.source/shape] :as opts}]
   (cond
@@ -102,13 +103,18 @@
         close-out-chan? (:ketu.source/close-out-chan? opts)
         ^long close-consumer? (:ketu.source/close-consumer? opts)
         consumer-close-timeout-ms (:ketu.source/consumer-close-timeout-ms opts)
-
         should-poll? (volatile! true)
+        decorator-fn (some-> (:ketu.source/consumer-decorator opts)
+                             (partial {:ketu.source/consumer consumer}))
+
         abort-pending-put (async/chan)
         done-putting (async/chan)
 
         subscribe! (or (subscribe-fn opts) (assign-fn opts))
-        poll! (poll-fn consumer opts)
+        poll-impl (poll-fn consumer should-poll? opts)
+        poll! (if (some? decorator-fn)
+                (partial decorator-fn poll-impl)
+                poll-impl)
         ->data (->data-fn opts)
         put! (fn [record] (put-or-abort-pending! out-chan (->data record) abort-pending-put))
 
@@ -120,9 +126,10 @@
 
             (subscribe! consumer)
 
-            (while @should-poll?
-              (let [records (poll!)]
-                (run! put! records)))
+            (loop []
+              (when-let [records (poll!)]
+                (run! put! records)
+                (recur)))
 
             (catch WakeupException e
               ; We wakeup the consumer on graceful shutdown after should-poll? is false.
