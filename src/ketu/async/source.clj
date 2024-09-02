@@ -4,6 +4,7 @@
             [ketu.clients.consumer :as consumer]
             [ketu.shape.consumer :as shape]
             [ketu.spec]
+            [ketu.decorators.consumer.decorator :as consumer-decorator]
             [ketu.util.log :as log])
   (:import (java.time Duration)
            (org.apache.kafka.clients.consumer Consumer)
@@ -104,16 +105,12 @@
         ^long close-consumer? (:ketu.source/close-consumer? opts)
         consumer-close-timeout-ms (:ketu.source/consumer-close-timeout-ms opts)
         should-poll? (volatile! true)
-        decorator-fn (some-> (:ketu.source/consumer-decorator opts)
-                             (partial {:ketu.source/consumer consumer}))
-
         abort-pending-put (async/chan)
         done-putting (async/chan)
-
         subscribe! (or (subscribe-fn opts) (assign-fn opts))
         poll-impl (poll-fn consumer should-poll? opts)
-        poll! (if (some? decorator-fn)
-                (partial decorator-fn poll-impl)
+        poll! (if (some? (:ketu.source/consumer-decorator opts))
+                (consumer-decorator/decorate-poll-fn {:ketu.source/consumer consumer} poll-impl opts)
                 poll-impl)
         ->data (->data-fn opts)
         put! (fn [record] (put-or-abort-pending! out-chan (->data record) abort-pending-put))

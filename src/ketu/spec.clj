@@ -2,9 +2,9 @@
   (:require [clojure.set]
             [clojure.spec.alpha :as s]
             [clojure.string]
-            [expound.alpha :as expound]
-            [clojure.core.async.impl.protocols])
+            [expound.alpha :as expound])
   (:import (java.util.regex Pattern)
+           (ketu.decorators.consumer.protocol ConsumerDecorator)
            (org.apache.kafka.clients.producer Callback)
            (org.apache.kafka.common.serialization Deserializer Serializer)))
 
@@ -28,7 +28,7 @@
 (s/def :ketu.source/close-out-chan? boolean?)
 (s/def :ketu.source/close-consumer? boolean?)
 (s/def :ketu.source/create-rebalance-listener-obj fn?)
-(s/def :ketu.source/consumer-decorator fn?)
+(s/def :ketu.source/consumer-decorator #(instance? ConsumerDecorator %))
 (s/def :ketu.source.assign/topic :ketu/topic)
 (s/def :ketu.source.assign/partition-nums (s/coll-of nat-int?))
 (s/def :ketu.source/assign-single-topic-partitions

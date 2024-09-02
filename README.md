@@ -8,7 +8,7 @@
 A Clojure Apache Kafka client with core.async api
 
 ```clojure
-[com.appsflyer/ketu "1.1.0"]
+[com.appsflyer/ketu "2.0.0"]
 ```
 
 ## Features
@@ -78,12 +78,11 @@ Note: `int` is used for brevity but can also mean `long`. Don't worry about it.
 | :internal-config | map                     | optional | A map of the underlying java client properties, for any extra lower level config |
 
 #### Consumer-source options
-
-| Key                             | Type                                                                                          | Req?     | Notes                                                                                                                                                                                                                                                                                                                                                     |
-|---------------------------------|-----------------------------------------------------------------------------------------------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| :group-id                       | string                                                                                        | required |                                                                                                                                                                                                                                                                                                                                                           |
-| :shape                          | `:value:`, `[:vector <fields>]`,`[:map <fields>]`, or an arity-1 function of `ConsumerRecord` | optional | If unspecified, channel will contain ConsumerRecord objects. [Examples](#data-shapes)                                                                                                                                                                                                                                                                     |
-| :ketu.source/consumer-decorator | `fn [consumer-context poll-fn] -> Iterable<ConsumerRecord>`                                   | optional | Decorates the internal poll function. when provided the decorator will be called with the following params:<br/>consumer-context: {:ketu.source/consumer consumer}<br/>pool-fn: fn [] -> Iterable<ConsumerRecord> <br/>Returns an iterable collection of consumerRecord.<br/>The decorator should call the poll-fn on behalf of the consumer source.<br/> |
+| Key                             | Type                                                                                          | Req?     | Notes                                                                                                                                                                                                                                                                                                                                                                |
+|---------------------------------|-----------------------------------------------------------------------------------------------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| :group-id                       | string                                                                                        | required |                                                                                                                                                                                                                                                                                                                                                                      |
+| :shape                          | `:value:`, `[:vector <fields>]`,`[:map <fields>]`, or an arity-1 function of `ConsumerRecord` | optional | If unspecified, channel will contain ConsumerRecord objects. [Examples](#data-shapes)                                                                                                                                                                                                                                                                                |
+| :ketu.source/consumer-decorator | `ConsumerDecorator`                                                                           | optional | Decorates the internal poll function. when provided the decorator `poll!` fn will be called with the following params:<br/>consumer-context: {:ketu.source/consumer consumer}<br/>pool-fn: fn [] -> Iterable<ConsumerRecord> <br/>Returns an iterable collection of consumerRecord.<br/>The decorator should call the poll-fn on behalf of the consumer source.<br/> |
 
 #### Producer-sink options
 
@@ -151,6 +150,7 @@ The decorator processes all immediately available commands in the commands-chan,
 (ns consumer-decorator-example
   (:require [clojure.core.async :as async]
             [ketu.async.source :as source]
+            [ketu.decorators.consumer.protocol :refer [ConsumerDecorator]]
             [ketu.async.sink :as sink]))
 
 (let [commands-chan (async/chan 10)
@@ -161,12 +161,16 @@ The decorator processes all immediately available commands in the commands-chan,
                      :group-id                       "example"
                      :value-type                     :string
                      :shape                          :value
-                     :ketu.source/consumer-decorator (fn [consumer-ctx poll-fn]
-                                                       (loop []
-                                                         (when-let [command (async/poll! commands-chan)]
-                                                           (command consumer-ctx)
-                                                           (recur)))
-                                                       (poll-fn))}
+                     :ketu.source/consumer-decorator (reify ConsumerDecorator
+                                                       (poll! [consumer-ctx poll-fn]
+                                                         (loop []
+                                                           (when-let [command (async/poll! commands-chan)]
+                                                             (command consumer-ctx)
+                                                             (recur)))
+                                                         (poll-fn))
+                                                       (validate [this opts]
+                                                         ;custom validation logic of the consumer options can be added here
+                                                         true))}
       source        (source/source consumer-chan consumer-opts)
 
       producer-chan (async/chan 10)
