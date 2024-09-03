@@ -2,6 +2,7 @@
   (:require [clojure.set]
             [clojure.spec.alpha :as s]
             [clojure.string]
+            [ketu.decorators.consumer.protocol]
             [expound.alpha :as expound])
   (:import (java.util.regex Pattern)
            (ketu.decorators.consumer.protocol ConsumerDecorator)
