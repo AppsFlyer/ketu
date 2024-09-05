@@ -6,6 +6,7 @@
             [clojure.core.async :as async]
             [ketu.clients.consumer :as consumer]
             [ketu.clients.producer :as producer]
+            [ketu.decorators.consumer.protocol :refer [ConsumerDecorator]]
             [ketu.async.source :as source]
             [ketu.async.sink :as sink]
             [ketu.test.kafka-setup :as kafka-setup])
@@ -213,37 +214,56 @@
         (.close ^AdminClient admin-client)))))
 
 (deftest consumer-decorator
-  (let [consumer-chan (async/chan 10)
-        result-chan (async/chan 100)
-        clicks-consumer-opts {:name                           "clicks-consumer"
-                              :brokers                        (kafka-setup/get-bootstrap-servers)
-                              :topic                          "clicks"
-                              :group-id                       "clicks-test-consumer"
-                              :auto-offset-reset              "earliest"
-                              :shape                          :value
-                              :ketu.source/consumer-decorator (fn [{_consumer :ketu.source/consumer} poll-fn]
-                                                                (let [records (poll-fn)]
-                                                                  (doseq [^ConsumerRecord record records]
-                                                                    (async/>!! result-chan (String. ^"[B" (.value record))))
-                                                                  records))}
-        source (source/source consumer-chan clicks-consumer-opts)
-        clicks-producer-opts {:name            "clicks-producer"
-                              :brokers         (kafka-setup/get-bootstrap-servers)
-                              :topic           "clicks"
-                              :key-type        :string
-                              :internal-config {"value.serializer" "org.apache.kafka.common.serialization.StringSerializer"}
-                              :shape           [:vector :key :value]}
-        producer-chan (async/chan 10)
-        sink (sink/sink producer-chan clicks-producer-opts)
-        input-values #{"1" "2" "3"}]
-    (try
-      (doseq [value input-values]
-        (async/>!! producer-chan ["1" value]))
-      (is (= input-values (into #{} (repeatedly 3 #(u/try-take! result-chan)))))
-      (is (= input-values (into #{} (map #(String. ^"[B" %)) (repeatedly 3 #(u/try-take! consumer-chan)))))
-      (finally
-        (Thread/sleep 2000)
-        (source/stop! source)
-        (async/close! producer-chan)
-        (sink/stop! sink)))))
+  (testing "consumer decorator functionality"
+    (let [consumer-chan        (async/chan 10)
+          result-chan          (async/chan 100)
+          clicks-consumer-opts {:name                           "clicks-consumer"
+                                :brokers                        (kafka-setup/get-bootstrap-servers)
+                                :topic                          "clicks"
+                                :group-id                       "clicks-test-consumer"
+                                :auto-offset-reset              "earliest"
+                                :shape                          :value
+                                :ketu.source/consumer-decorator (reify ConsumerDecorator
+                                                                  (poll! [_ {_consumer :ketu.source/consumer} poll-fn]
+                                                                    (let [records (poll-fn)]
+                                                                      (doseq [^ConsumerRecord record records]
+                                                                        (async/>!! result-chan (String. ^"[B" (.value record))))
+                                                                      records))
+                                                                  (valid? [_ _]
+                                                                    true))}
+          source               (source/source consumer-chan clicks-consumer-opts)
+          clicks-producer-opts {:name            "clicks-producer"
+                                :brokers         (kafka-setup/get-bootstrap-servers)
+                                :topic           "clicks"
+                                :key-type        :string
+                                :internal-config {"value.serializer" "org.apache.kafka.common.serialization.StringSerializer"}
+                                :shape           [:vector :key :value]}
+          producer-chan        (async/chan 10)
+          sink                 (sink/sink producer-chan clicks-producer-opts)
+          input-values         #{"1" "2" "3"}]
+      (try
+        (doseq [value input-values]
+          (async/>!! producer-chan ["1" value]))
+        (is (= input-values (into #{} (repeatedly 3 #(u/try-take! result-chan)))))
+        (is (= input-values (into #{} (map #(String. ^"[B" %)) (repeatedly 3 #(u/try-take! consumer-chan)))))
+        (finally
+          (Thread/sleep 2000)
+          (source/stop! source)
+          (async/close! producer-chan)
+          (sink/stop! sink))))
 
+    (testing "consumer decorator validation failure"
+      (let [consumer-chan        (async/chan 10)
+            clicks-consumer-opts {:name                           "clicks-consumer"
+                                  :brokers                        (kafka-setup/get-bootstrap-servers)
+                                  :topic                          "clicks"
+                                  :group-id                       "clicks-test-consumer"
+                                  :auto-offset-reset              "earliest"
+                                  :shape                          :value
+                                  :ketu.source/consumer-decorator (reify  ConsumerDecorator
+                                                                    (poll! [_ _ _]
+                                                                      nil)
+                                                                    (valid? [_ _]
+                                                                      false))}]
+        (is (thrown-with-msg? Exception #"Consumer decorator validation failed"
+                              (source/source consumer-chan clicks-consumer-opts)))))))
