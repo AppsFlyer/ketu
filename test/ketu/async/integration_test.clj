@@ -229,7 +229,7 @@
                                                                       (doseq [^ConsumerRecord record records]
                                                                         (async/>!! result-chan (String. ^"[B" (.value record))))
                                                                       records))
-                                                                  (validate [_ _]
+                                                                  (valid? [_ _]
                                                                     true))}
           source               (source/source consumer-chan clicks-consumer-opts)
           clicks-producer-opts {:name            "clicks-producer"
@@ -263,7 +263,7 @@
                                   :ketu.source/consumer-decorator (reify  ConsumerDecorator
                                                                     (poll! [_ _ _]
                                                                       nil)
-                                                                    (validate [_ _]
+                                                                    (valid? [_ _]
                                                                       false))}]
         (is (thrown-with-msg? Exception #"Consumer decorator validation failed"
                               (source/source consumer-chan clicks-consumer-opts)))))))
