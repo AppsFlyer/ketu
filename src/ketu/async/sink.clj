@@ -40,7 +40,7 @@
       ; Just in case of a production issue and generic error handling wasn't implemented yet.
       (fn [record callback]
         (try
-          (producer/send! producer record callback)
+          @(producer/send! producer record callback)
           (catch TimeoutException e
             (log/error logger "[sink={}] Send timeout'" sink-name e))
           (catch Exception e
