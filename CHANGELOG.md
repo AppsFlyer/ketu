@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [[2.1.0]] (https://github.com/AppsFlyer/ketu/pull/19) - 2025-09-08
+### Changed
+- Java clients library `org.apache.kafka/kafka-clients` upgraded from [3.3.1](https://kafka.apache.org/33/documentation.html) to [3.9.1](https://kafka.apache.org/39/documentation.html)
+- Kafka clients changes analysis is available [here](kafka-client-changes-analysis.md)
+
 ## [[2.0.0]] (https://github.com/AppsFlyer/ketu/pull/19) - 2024-09-03
 ### Changed
 - consumer decorator API breaking change - use ConsumerDecorator protocol instead of `consumer-decorator` function.
