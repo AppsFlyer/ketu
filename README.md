@@ -8,7 +8,7 @@
 A Clojure Apache Kafka client with core.async api
 
 ```clojure
-[com.appsflyer/ketu "2.0.0"]
+[com.appsflyer/ketu "2.1.0"]
 ```
 
 ## Features
@@ -62,7 +62,7 @@ Consume a name string from kafka and produce a greeting string for that name bac
 Anything that is not documented is not supported and might change.
 
 Read more about the default values used by the underlying Kafka clients
-v3.3.1 [here](https://kafka.apache.org/33/documentation.html)
+v3.9.1 [here](https://kafka.apache.org/39/documentation.html)
 
 Note: `int` is used for brevity but can also mean `long`. Don't worry about it.
 
@@ -224,6 +224,11 @@ The decorator processes all immediately available commands in the commands-chan,
     (finally
       (source/stop! source))))
 ```
+
+## Java Kafka client versions
+- `ketu` version 1.0.0+ uses `org.apache.kafka/kafka-clients` version 3.3.1
+- `ketu` version 2.1.0+ uses `org.apache.kafka/kafka-clients` version 3.9.1
+  - For a comprehensive list of changes in the java client, see [here](kafka-client-changes-analysis.md)
 
 ## Development & Contribution
 
