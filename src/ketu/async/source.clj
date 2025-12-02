@@ -8,6 +8,7 @@
             [ketu.util.log :as log])
   (:import (java.time Duration)
            (org.apache.kafka.clients.consumer Consumer)
+           (org.apache.kafka.common TopicPartition)
            (org.apache.kafka.common.errors WakeupException)
            (org.apache.kafka.common.serialization Deserializer)
            (org.slf4j Logger LoggerFactory)))
@@ -74,22 +75,61 @@
       (fn [consumer]
         (consumer/assign! consumer (consumer/topic-partitions topic partitions))))))
 
+(defn- get-max-poll-records-from-opts
+  "Gets max.poll.records from opts config, defaulting to 1 if not found."
+  [opts]
+  (try
+    (let [config           (:ketu.apache.consumer/config opts)
+          max-poll-records (get config "max.poll.records")]
+      (if max-poll-records
+        (if (string? max-poll-records)
+          (Long/parseLong max-poll-records)
+          (long max-poll-records))
+        1))
+    (catch Exception _
+      (log/error logger "Failed to get max.poll.records from opts" opts)
+      1)))
+
+(defn- increment-offsets-for-assigned-partitions!
+  "Increments the offset by skip-amount for all assigned partitions to skip faulty messages.
+  Uses max.poll.records from opts config if skip-amount is not provided."
+  ([^Consumer consumer source-name opts]
+   (increment-offsets-for-assigned-partitions! consumer source-name opts nil))
+  ([^Consumer consumer source-name opts skip-amount]
+   (try
+     (let [assigned-partitions (consumer/assignment consumer)
+           skip-amount         (or skip-amount (get-max-poll-records-from-opts opts))]
+       (doseq [^TopicPartition partition assigned-partitions]
+         (try
+           (let [current-position (consumer/position consumer partition)
+                 next-offset      (+ current-position skip-amount)]
+             (consumer/seek! consumer partition next-offset)
+             (log/info logger "[source={}] Incremented offset for partition {} from {} to {} (skip amount: {})"
+                       source-name partition current-position next-offset skip-amount))
+           (catch Exception e
+             (log/error logger "[source={}] Failed to increment offset for partition {}"
+                        source-name partition e)))))
+     (catch Exception e
+       (log/error logger "[source={}] Failed to get assigned partitions for offset increment"
+                  source-name e)))))
+
 (defn- poll-fn [^Consumer consumer should-poll? opts]
   (when @should-poll?
     (let [source-name           (:ketu/name opts)
           poll-timeout-duration (Duration/ofMillis (:ketu.source/poll-timeout-ms opts))
-          catching-poll?        (:ketu.source.legacy/catching-poll? opts)]
-      (if catching-poll?
-        ;TODO Eliminate catching poll ASAP.
-        ; Just in case of a production issue and generic error handling wasn't implemented yet.
-        (fn []
-          (try
-            (consumer/poll! consumer poll-timeout-duration)
-            (catch Exception e
-              (log/error logger "[source={}] Caught poll exception" source-name e)
-              [])))
-        (fn []
-          (consumer/poll! consumer poll-timeout-duration))))))
+          custom-catch-fn       (:ketu.source/custom-catch-fn opts)]
+      (fn []
+        (try
+          (consumer/poll! consumer poll-timeout-duration)
+          (catch WakeupException e
+            (throw e))
+          (catch Exception e
+            (if (some? custom-catch-fn)
+              (custom-catch-fn consumer opts)
+              (let [skip-amount (:ketu.source/error-skip-offset-amount opts)]
+                (log/error logger "[source={}] Caught poll exception, skipping faulty batch" source-name e)
+                (increment-offsets-for-assigned-partitions! consumer source-name opts skip-amount)
+                []))))))))
 
 (defn- ->data-fn [{:keys [ketu.source/shape] :as opts}]
   (cond

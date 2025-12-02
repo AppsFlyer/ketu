@@ -78,11 +78,14 @@ Note: `int` is used for brevity but can also mean `long`. Don't worry about it.
 | :internal-config | map                     | optional | A map of the underlying java client properties, for any extra lower level config |
 
 #### Consumer-source options
-| Key                             | Type                                                                                          | Req?     | Notes                                                                                 |
-|---------------------------------|-----------------------------------------------------------------------------------------------|----------|---------------------------------------------------------------------------------------|
-| :group-id                       | string                                                                                        | required |                                                                                       |
-| :shape                          | `:value:`, `[:vector <fields>]`,`[:map <fields>]`, or an arity-1 function of `ConsumerRecord` | optional | If unspecified, channel will contain ConsumerRecord objects. [Examples](#data-shapes) |
-| :ketu.source/consumer-decorator | `ConsumerDecorator`                                                                           | optional | [Protocol](#ketu.decorators.consumer.protocol)                                        |
+
+| Key                                   | Type                                                                                          | Req?     | Notes                                                                                                                                                   |
+|---------------------------------------|-----------------------------------------------------------------------------------------------|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| :group-id                             | string                                                                                        | required |                                                                                                                                                         |
+| :shape                                | `:value:`, `[:vector <fields>]`,`[:map <fields>]`, or an arity-1 function of `ConsumerRecord` | optional | If unspecified, channel will contain ConsumerRecord objects. [Examples](#data-shapes)                                                                   |
+| :ketu.source/consumer-decorator       | `ConsumerDecorator`                                                                           | optional | [Protocol](#ketu.decorators.consumer.protocol)                                                                                                          |
+| :ketu.source/custom-catch-fn          | `(fn [^Consumer consumer opts] ...)`                                                          | optional | Called when `poll` throws (non-wakeup) exception; should return a (possibly empty) collection of records. May mutate consumer (e.g. `seek`) and/or opts |
+| :ketu.source/error-skip-offset-amount | int                                                                                           | optional | Number of records to skip on a poll exception. If not set, falls back to Kafka `max.poll.records` from `:internal-config` (string or numeric), else 1   |
 
 #### Producer-sink options
 
@@ -145,7 +148,8 @@ for example when managing the offset manually, auto-commit should usually set to
 
 In this example we use the decorator to run commands in the polling thread context.  
 The consumer is paused/resumed based on commands sent from the application.  
-The decorator processes all immediately available commands in the commands-chan, and only then calls (poll-fn).  
+The decorator processes all immediately available commands in the commands-chan, and only then calls (poll-fn).
+
 ```clojure
 (ns consumer-decorator-example
   (:require [clojure.core.async :as async]
@@ -226,9 +230,10 @@ The decorator processes all immediately available commands in the commands-chan,
 ```
 
 ## Java Kafka client versions
+
 - `ketu` version 1.0.0+ uses `org.apache.kafka/kafka-clients` version 3.3.1
 - `ketu` version 2.1.0+ uses `org.apache.kafka/kafka-clients` version 3.9.1
-  - For a comprehensive list of changes in the java client, see [here](kafka-client-changes-analysis.md)
+    - For a comprehensive list of changes in the java client, see [here](kafka-client-changes-analysis.md)
 
 ## Development & Contribution
 

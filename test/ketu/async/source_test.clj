@@ -2,6 +2,7 @@
   (:require [clojure.test :refer [deftest testing is]]
             [clojure.core.async :as async]
             [clojure.core.async.impl.protocols]
+            [clojure.string :as str]
             [ketu.test.log :as log]
             [ketu.test.util :as u]
             [ketu.clients.consumer :as consumer]
@@ -140,22 +141,66 @@
                   [:info "[source=test] Exit consumer thread"]]
                  (log/events log-ctx))))))))
 
-(deftest unrecoverable-exception-logs
-  (testing "Throw unrecoverable exception on first poll"
-    (log/with-test-appender
-      (log/ns-logger 'ketu.async.source)
-      (fn [log-ctx]
-        (let [consumer (doto (mock-consumer)
-                         (.setPollException (KafkaException. "test exception")))
-              ch (async/chan)
-              source (source/source ch {:name "test"
-                                        :topic "test-topic"
-                                        :ketu.source/consumer-supplier (constantly consumer)})]
-          (u/try-take! (source/done-chan source))
-          (is (= [[:info "[source=test] Start consumer thread"]
-                  [:error "[source=test] Unrecoverable consumer error"]
-                  [:info "[source=test] Done consuming"]
-                  [:info "[source=test] Close out channel"]
-                  [:info "[source=test] Close consumer"]
-                  [:info "[source=test] Exit consumer thread"]]
-                 (log/events log-ctx))))))))
+(deftest poll-catch-fn
+  (testing "Custom catch function is called, receives correct parameters, and can return empty collection"
+    (let [received-opts   (atom nil)
+          topic           "test-topic"
+          partition       (consumer/topic-partition topic 0)
+          custom-catch-fn (fn [consumer opts]
+                            (reset! received-opts opts)
+                            (consumer/seek! consumer partition 1)
+                            [])                             ; Return empty collection
+          consumer        (doto (mock-consumer topic)
+                            (.setPollException (KafkaException. "test exception")))
+          ch              (async/chan)
+          opts            {:name                          "test"
+                           :topic                         topic
+                           :ketu.source/consumer-supplier (constantly consumer)
+                           :ketu.source/custom-catch-fn   custom-catch-fn
+                           :ketu.source/close-out-chan?   false
+                           :custom-opt                    "custom-value"}
+          source          (source/source ch opts)]
+      (add-record consumer (ConsumerRecord. topic 0 0 "test-key" "test-value"))
+      (Thread/sleep 100)
+      (is (= "custom-value" (:custom-opt @received-opts)))
+      (is (not (channel-closed? ch)))
+      (let [timeout-ch (async/timeout 100)
+            [item _] (async/alts!! [ch timeout-ch] :priority true)]
+        (is (nil? item) "Catch function returns [], so no records should be put on channel"))
+      (source/stop! source)))
+
+  (testing "Default catch function handles faulty message gracefully and then processes healthy message"
+    (let [orig-poll consumer/poll!]
+      (with-redefs [ketu.clients.consumer/poll!
+                    (fn [c t]
+                      (let [records (orig-poll c t)]
+                        (if (some #(or (= "faulty-key" (.key %))
+                                       (= "faulty-value" (.value %)))
+                                  records)
+                          (do
+                            ;; Reset position to 0 to simulate that we are stuck at the faulty record
+                            ;; Since orig-poll advanced it, we must rewind for the test logic to be valid.
+                            (consumer/seek! c (consumer/topic-partition "test-topic" 0) 0)
+                            (throw (KafkaException. "Simulated corruption")))
+                          records)))]
+        (log/with-test-appender
+          (log/ns-logger 'ketu.async.source)
+          (fn [log-ctx]
+            (let [consumer (mock-consumer "test-topic")
+                  ch       (async/chan)
+                  source   (source/source ch {:name                          "test"
+                                              :topic                         "test-topic"
+                                              :ketu.source/consumer-supplier (constantly consumer)
+                                              :ketu.source/close-out-chan?   false})]
+              (add-record consumer (ConsumerRecord. "test-topic" 0 0 "faulty-key" "faulty-value"))
+              (Thread/sleep 100)
+              (is (some #(and (= :error (first %))
+                              (str/includes? (second %) "Caught poll exception"))
+                        (log/events log-ctx)))
+              (add-record consumer (ConsumerRecord. "test-topic" 0 1 "healthy-key" "healthy-value"))
+              (Thread/sleep 100)
+              (let [received-record (u/try-take! ch)]
+                (is (= "healthy-key" (.key received-record)))
+                (is (= "healthy-value" (.value received-record)))
+                (is (= 1 (.offset received-record))))
+              (source/stop! source))))))))
