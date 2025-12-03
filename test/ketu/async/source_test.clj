@@ -143,23 +143,23 @@
 
 (deftest poll-catch-fn
   (testing "Custom catch function is called, receives correct parameters, and can return empty collection"
-    (let [received-opts   (atom nil)
-          topic           "test-topic"
-          partition       (consumer/topic-partition topic 0)
-          custom-catch-fn (fn [consumer opts]
-                            (reset! received-opts opts)
-                            (consumer/seek! consumer partition 1)
-                            [])                             ; Return empty collection
-          consumer        (doto (mock-consumer topic)
-                            (.setPollException (KafkaException. "test exception")))
-          ch              (async/chan)
-          opts            {:name                          "test"
-                           :topic                         topic
-                           :ketu.source/consumer-supplier (constantly consumer)
-                           :ketu.source/custom-catch-fn   custom-catch-fn
-                           :ketu.source/close-out-chan?   false
-                           :custom-opt                    "custom-value"}
-          source          (source/source ch opts)]
+    (let [received-opts      (atom nil)
+          topic              "test-topic"
+          partition          (consumer/topic-partition topic 0)
+          poll-error-handler (fn [consumer opts]
+                               (reset! received-opts opts)
+                               (consumer/seek! consumer partition 1)
+                               [])                          ; Return empty collection
+          consumer           (doto (mock-consumer topic)
+                               (.setPollException (KafkaException. "test exception")))
+          ch                 (async/chan)
+          opts               {:name                          "test"
+                              :topic                         topic
+                              :ketu.source/consumer-supplier (constantly consumer)
+                              :ketu.source/poll-error-handler poll-error-handler
+                              :ketu.source/close-out-chan? false
+                              :custom-opt "custom-value"}
+          source             (source/source ch opts)]
       (add-record consumer (ConsumerRecord. topic 0 0 "test-key" "test-value"))
       (Thread/sleep 100)
       (is (= "custom-value" (:custom-opt @received-opts)))
