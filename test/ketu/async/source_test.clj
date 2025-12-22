@@ -93,7 +93,7 @@
 
 (deftest shape
   (testing "Put ConsumerRecord objects by default"
-    (let [record (ConsumerRecord. "topic" 0 0 "k" "v")
+    (let [record (ConsumerRecord. "topic" 0 1 "k" "v")
           consumer (doto (mock-consumer "topic")
                      (add-record record))
           ch (async/chan)
@@ -156,7 +156,7 @@
           opts               {:name                          "test"
                               :topic                         topic
                               :ketu.source/consumer-supplier (constantly consumer)
-                              :ketu.source/poll-error-handler   poll-error-handler
+                              :ketu.source/poll-error-handler poll-error-handler
                               :ketu.source/close-out-chan?   false
                               :custom-opt                    "custom-value"}
           source             (source/source ch opts)]
