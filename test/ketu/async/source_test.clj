@@ -156,9 +156,9 @@
           opts               {:name                          "test"
                               :topic                         topic
                               :ketu.source/consumer-supplier (constantly consumer)
-                              :ketu.source/poll-error-handler poll-error-handler
-                              :ketu.source/close-out-chan? false
-                              :custom-opt "custom-value"}
+                              :ketu.source/poll-error-handler   poll-error-handler
+                              :ketu.source/close-out-chan?   false
+                              :custom-opt                    "custom-value"}
           source             (source/source ch opts)]
       (add-record consumer (ConsumerRecord. topic 0 0 "test-key" "test-value"))
       (Thread/sleep 100)
