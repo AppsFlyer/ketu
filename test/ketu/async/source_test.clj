@@ -194,9 +194,10 @@
                                               :ketu.source/close-out-chan?   false})]
               (add-record consumer (ConsumerRecord. "test-topic" 0 0 "faulty-key" "faulty-value"))
               (Thread/sleep 100)
-              (is (some #(and (= :error (first %))
-                              (str/includes? (second %) "Caught poll exception"))
-                        (log/events log-ctx)))
+              (is (some #(and (= :info (first %))
+                              (str/includes? (second %) "Incremented offset for partition"))
+                        (log/events log-ctx))
+                  "Default handler should skip faulty batch by incrementing partition offset")
               (add-record consumer (ConsumerRecord. "test-topic" 0 1 "healthy-key" "healthy-value"))
               (Thread/sleep 100)
               (let [received-record (u/try-take! ch)]
