@@ -1,4 +1,4 @@
-(defproject com.appsflyer/ketu "2.1.0"
+(defproject com.appsflyer/ketu "2.2.0-SNAPSHOT"
   :description "Clojure Apache Kafka client with core.async api"
   :url "https://github.com/AppsFlyer/ketu"
   :license {:name "Apache License, Version 2.0"
