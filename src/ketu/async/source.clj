@@ -117,12 +117,12 @@
     (increment-offsets-for-assigned-partitions! consumer source-name opts records-to-skip)
     []))
 
-(defn- get-custom-error-handler [opts]
-  (let [provided-catch-fn (:ketu.source/custom-catch-fn opts)
+(defn- get-error-handler [opts]
+  (let [provided-catch-fn (:ketu.source/poll-error-handler opts)
         custom-catch-fn
                           (cond
                             (nil? provided-catch-fn)
-                            nil
+                            default-poll-error-handler
 
                             (fn? provided-catch-fn)
                             provided-catch-fn
@@ -131,14 +131,13 @@
                             (do
                               (log/error logger "[source={}] Invalid :ketu.source/custom-catch-fn (must be fn [consumer opts] -> coll), got: %s. Using default error handler."
                                          (type provided-catch-fn))
-                              nil))]
+                              default-poll-error-handler))]
     custom-catch-fn))
 
 (defn- poll-fn [^Consumer consumer should-poll? opts]
   (when @should-poll?
     (let [source-name           (:ketu/name opts)
-          custom-error-handler  (get-custom-error-handler opts)
-          error-handler         (or custom-error-handler (default-poll-error-handler consumer opts))
+          error-handler-fn      (get-error-handler opts)
           poll-timeout-duration (Duration/ofMillis (:ketu.source/poll-timeout-ms opts))]
       (fn []
         (try
@@ -147,7 +146,7 @@
             (throw e))
           (catch Exception e
             (log/error logger "[source={}] Caught poll exception, skipping faulty batch" source-name e)
-            (error-handler consumer opts)))))))
+            (error-handler-fn consumer opts)))))))
 
 (defn- ->data-fn [{:keys [ketu.source/shape] :as opts}]
   (cond
