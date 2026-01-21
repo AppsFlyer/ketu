@@ -1,5 +1,6 @@
 (ns ketu.async.source
   (:require [clojure.core.async :as async]
+            [clojure.core.async.impl.protocols :as async-protocols]
             [ketu.async.util :as util]
             [ketu.clients.consumer :as consumer]
             [ketu.shape.consumer :as shape]
@@ -125,7 +126,10 @@
 
             (loop []
               (when-let [records (poll!)]
-                (run! put! records)
+                (if (seq records)
+                  (run! put! records)
+                  ; Throws exception if not connected
+                  (.listTopics consumer (Duration/ofMillis 5000)))
                 (recur)))
 
             (catch WakeupException e
@@ -210,6 +214,9 @@
 
 (defn done-chan [state]
   (:ketu.source/consumer-thread state))
+
+(defn closed? [consumer]
+  (-> consumer :ketu.source/out-chan async-protocols/closed?))
 
 (defn- wait-for-the-thread! [state]
   (let [consumer-thread (:ketu.source/consumer-thread state)
