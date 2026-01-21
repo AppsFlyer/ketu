@@ -75,35 +75,20 @@
       (fn [consumer]
         (consumer/assign! consumer (consumer/topic-partitions topic partitions))))))
 
-(defn- get-max-poll-records-from-opts
-  "Gets max.poll.records from opts config, defaulting to 1 if not found."
-  [opts]
-  (try
-    (let [config           (:ketu.apache.consumer/config opts)
-          max-poll-records (get config "max.poll.records")]
-      (if max-poll-records
-        (if (string? max-poll-records)
-          (Long/parseLong max-poll-records)
-          (long max-poll-records))
-        1))
-    (catch Exception _
-      (log/error logger "Failed to get max.poll.records from opts" opts)
-      1)))
-
 (defn- increment-offsets-for-assigned-partitions!
   "Increments the offset by records-to-skip for all assigned partitions to skip faulty messages.
-  Uses max.poll.records from opts config if records-to-skip is not provided."
-  ([^Consumer consumer source-name opts records-to-skip]
+  If records-to-skip is not provided, default to 1."
+  ([^Consumer consumer source-name records-to-skip]
    (try
      (let [assigned-partitions (consumer/assignment consumer)
-           records-to-skip     (or records-to-skip (get-max-poll-records-from-opts opts))]
+           skip-amount         (or records-to-skip 1)]
        (doseq [^TopicPartition partition assigned-partitions]
          (try
            (let [current-position (consumer/position consumer partition)
-                 next-offset      (+ current-position records-to-skip)]
+                 next-offset      (+ current-position skip-amount)]
              (consumer/seek! consumer partition next-offset)
              (log/info logger "[source={}] Incremented offset for partition {} from {} to {} (skip amount: {})"
-                       source-name partition current-position next-offset records-to-skip))
+                       source-name partition current-position next-offset skip-amount))
            (catch Exception e
              (log/error logger "[source={}] Failed to increment offset for partition {}"
                         source-name partition e)))))
@@ -114,25 +99,25 @@
 (defn- default-poll-error-handler [consumer opts]
   (let [records-to-skip (:ketu.source/error-skip-offset-amount opts)
         source-name     (:ketu/name opts)]
-    (increment-offsets-for-assigned-partitions! consumer source-name opts records-to-skip)
+    (increment-offsets-for-assigned-partitions! consumer source-name records-to-skip)
     []))
 
 (defn- get-error-handler [opts]
-  (let [provided-catch-fn (:ketu.source/poll-error-handler opts)
-        custom-catch-fn
+  (let [provided-error-fn (:ketu.source/poll-error-handler opts)
+        error-handler-fn
                           (cond
-                            (nil? provided-catch-fn)
+                            (nil? provided-error-fn)
                             default-poll-error-handler
 
-                            (fn? provided-catch-fn)
-                            provided-catch-fn
+                            (fn? provided-error-fn)
+                            provided-error-fn
 
                             :else
                             (do
-                              (log/error logger "[source={}] Invalid :ketu.source/custom-catch-fn (must be fn [consumer opts] -> coll), got: %s. Using default error handler."
-                                         (type provided-catch-fn))
+                              (log/error logger "[source={}] Invalid :ketu.source/poll-error-handler (must be fn [consumer opts] -> coll), got: %s. Using default error handler."
+                                         (type provided-error-fn))
                               default-poll-error-handler))]
-    custom-catch-fn))
+    error-handler-fn))
 
 (defn- poll-fn [^Consumer consumer should-poll? opts]
   (when @should-poll?
