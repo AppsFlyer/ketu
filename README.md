@@ -85,7 +85,7 @@ Note: `int` is used for brevity but can also mean `long`. Don't worry about it.
 | :shape                                | `:value:`, `[:vector <fields>]`,`[:map <fields>]`, or an arity-1 function of `ConsumerRecord` | optional | If unspecified, channel will contain ConsumerRecord objects. [Examples](#data-shapes)                                                                                      |
 | :ketu.source/consumer-decorator       | `ConsumerDecorator`                                                                           | optional | [Protocol](#ketu.decorators.consumer.protocol)                                                                                                                             |
 | :ketu.source/poll-error-handler       | `(fn [^Consumer consumer opts] ...)`                                                          | optional | Called when `poll` throws (non-wakeup) exception; should return a (possibly empty) collection of records. May mutate consumer (e.g. `seek`) and/or opts (consumer options) |
-| :ketu.source/error-skip-offset-amount | int                                                                                           | optional | Number of records to skip on a poll exception. If not set, falls back to Kafka `max.poll.records` from `:internal-config` (string or numeric), else 1                      |
+| :ketu.source/error-skip-offset-amount | int                                                                                           | optional | Number of records to skip on a poll exception. If not set, default value is 1.                                                                                             |
 
 #### Producer-sink options
 
