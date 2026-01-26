@@ -102,27 +102,17 @@
     (increment-offsets-for-assigned-partitions! consumer source-name records-to-skip)
     []))
 
-(defn- get-error-handler [opts]
-  (let [provided-error-fn (:ketu.source/poll-error-handler opts)
-        error-handler-fn
-                          (cond
-                            (nil? provided-error-fn)
-                            default-poll-error-handler
-
-                            (fn? provided-error-fn)
-                            provided-error-fn
-
-                            :else
-                            (do
-                              (log/error logger "[source={}] Invalid :ketu.source/poll-error-handler (must be fn [consumer opts] -> coll), got: %s. Using default error handler."
-                                         (type provided-error-fn))
-                              default-poll-error-handler))]
+(defn- get-poll-error-handler [opts]
+  (let [provided-error-handling-fn (:ketu.source/poll-error-handler opts)
+        error-handler-fn  (if (fn? provided-error-handling-fn)
+                            provided-error-handling-fn
+                            default-poll-error-handler)]
     error-handler-fn))
 
 (defn- poll-fn [^Consumer consumer should-poll? opts]
   (when @should-poll?
     (let [source-name           (:ketu/name opts)
-          error-handler-fn      (get-error-handler opts)
+          error-handler-fn      (get-poll-error-handler opts)
           poll-timeout-duration (Duration/ofMillis (:ketu.source/poll-timeout-ms opts))]
       (fn []
         (try
