@@ -44,7 +44,8 @@
    :ketu.source/consumer-close-timeout-ms  60000
    :ketu.source/consumer-thread-timeout-ms 60000
    :ketu.source/close-out-chan?            true
-   :ketu.source/close-consumer?            true})
+   :ketu.source/close-consumer?            true
+   :ketu.source/error-skip-offset-amount   0})
 
 (defn- finalize-opts [opts]
   (-> (default-opts)
@@ -75,13 +76,13 @@
       (fn [consumer]
         (consumer/assign! consumer (consumer/topic-partitions topic partitions))))))
 
-(defn- increment-offsets-for-assigned-partitions!
+(defn increment-offsets-for-assigned-partitions!
   "Increments the offset by records-to-skip for all assigned partitions to skip faulty messages.
-  If records-to-skip is not provided, default to 1."
+  Default skip amount is 0 (no offset change)."
   ([^Consumer consumer source-name records-to-skip]
    (try
      (let [assigned-partitions (consumer/assignment consumer)
-           skip-amount         (or records-to-skip 1)]
+           skip-amount         records-to-skip]
        (doseq [^TopicPartition partition assigned-partitions]
          (try
            (let [current-position (consumer/position consumer partition)
