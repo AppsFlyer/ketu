@@ -30,6 +30,8 @@
 (s/def :ketu.source/close-consumer? boolean?)
 (s/def :ketu.source/create-rebalance-listener-obj fn?)
 (s/def :ketu.source/consumer-decorator #(instance? ConsumerDecorator %))
+(s/def :ketu.source/error-skip-offset-amount pos-int?)
+(s/def :ketu.source/poll-error-handler fn?)
 (s/def :ketu.source.assign/topic :ketu/topic)
 (s/def :ketu.source.assign/partition-nums (s/coll-of nat-int?))
 (s/def :ketu.source/assign-single-topic-partitions
@@ -79,7 +81,9 @@
                 :ketu.source/consumer-thread-timeout-ms
                 :ketu.source/close-out-chan?
                 :ketu.source/close-consumer?
-                :ketu.source/consumer-decorator]))
+                :ketu.source/consumer-decorator
+                :ketu.source/error-skip-offset-amount
+                :ketu.source/poll-error-handler]))
 
 (s/def :ketu.apache.producer/config map?)
 (s/def :ketu.sink/sender-threads-num pos-int?)
